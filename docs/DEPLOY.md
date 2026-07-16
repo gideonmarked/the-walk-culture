@@ -1,5 +1,40 @@
 # Deploying StepQuest on the cheapest possible footing
 
+## What runs where (read this first)
+
+StepQuest is a **mobile app**, not a website. There is no server to "host the
+app on" — no VPS, no container, no domain. It compiles to a binary that runs
+**on the phone**. You *distribute* that binary; you don't serve it.
+
+So the entire deployment surface is two things:
+
+```
+   ┌─────────────────────────┐         ┌──────────────────────────┐
+   │  The app (Flutter)      │  HTTPS  │  Supabase (§1)           │
+   │  runs ON the phone      │ ──────▶ │  Postgres + Auth         │
+   │                         │         │  + validate-purchase fn  │
+   │  Android / iOS only     │ ◀────── │                          │
+   └─────────────────────────┘         └──────────────────────────┘
+        distributed as                        the only thing
+        APK (§3) or Play (§4)                 actually "served"
+                                              — free tier, $0
+```
+
+- **The app binary** → gets onto phones via a direct APK (§3) or the Play Store
+  (§4). That *is* "deploying the app".
+- **The backend** → Supabase (§1). The only hosted piece, and it's free.
+
+Everything still works with the backend switched off (the app runs local-only);
+Supabase adds cloud saves and the money paths.
+
+**Flutter Web is not an option.** Only `android` and `ios` are enabled, and the
+`health` / `pedometer` plugins are mobile-only — a browser cannot read Health
+Connect or a step sensor, so the core premise can't run on the web. If you ever
+want a *marketing* page, that's a separate static site (Cloudflare/GitHub Pages,
+also free) — not this app.
+
+---
+
 Target: **$0/month running cost**, plus a **$25 one-time** Google fee you only
 pay when you actually want in-app purchases. Everything below fits inside free
 tiers at prototype/early-launch scale.
