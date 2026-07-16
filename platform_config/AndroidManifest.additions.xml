@@ -1,0 +1,53 @@
+<!-- =====================================================================
+     Android manifest additions — doc §3.4(a).
+     Merge these into android/app/src/main/AndroidManifest.xml AFTER running
+     `flutter create`. The passive-steps (Phase 0/1) release needs everything
+     EXCEPT the TURBO/location block at the bottom.
+     ===================================================================== -->
+
+<!-- (1) Direct child of <manifest>, alongside <application>:
+     detect Health Connect + declare the permission-rationale intent. -->
+<queries>
+  <package android:name="com.google.android.apps.healthdata" />
+  <intent>
+    <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+  </intent>
+</queries>
+
+<!-- (2) Direct children of <manifest>: health permissions (passive steps). -->
+<uses-permission android:name="android.permission.health.READ_STEPS" />
+<uses-permission android:name="android.permission.health.READ_DISTANCE" />
+<uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" />
+<uses-permission android:name="android.permission.health.READ_FLOORS_CLIMBED" />
+<uses-permission android:name="android.permission.health.READ_HEALTH_DATA_HISTORY" />
+<uses-permission android:name="android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND" />
+<uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+
+<!-- (3) Inside <application>: point Health Connect's permission screen at your
+     privacy policy (required to pass Google review). -->
+<activity-alias
+    android:name="ViewPermissionUsageActivity"
+    android:exported="true"
+    android:targetActivity=".MainActivity"
+    android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+  <intent-filter>
+    <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+    <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+  </intent-filter>
+</activity-alias>
+
+<!-- (4) Add this intent-filter INSIDE the existing <activity .MainActivity>. -->
+<!--
+<intent-filter>
+  <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+</intent-filter>
+-->
+
+<!-- =====================================================================
+     TURBO release ONLY (Phase 4, doc §2.4) — do NOT add before then.
+     =====================================================================
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+-->

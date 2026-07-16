@@ -1,0 +1,19 @@
+<!-- =====================================================================
+     iOS Info.plist additions — doc §3.3(a).
+     Paste these key/string pairs into ios/Runner/Info.plist, just before the
+     closing </dict></plist>. Then enable the HealthKit capability in Xcode
+     (Runner target → Signing & Capabilities → + Capability → HealthKit) and
+     set the iOS deployment target to 13.0+.
+     ===================================================================== -->
+
+<key>NSHealthShareUsageDescription</key>
+<string>StepQuest reads your step count to turn your walking into in-game currency.</string>
+<key>NSHealthUpdateUsageDescription</key>
+<string>StepQuest can save workout data back to Apple Health.</string>
+<key>NSMotionUsageDescription</key>
+<string>StepQuest uses motion data to show your steps updating live.</string>
+
+<!-- TURBO release ONLY (Phase 4, doc §2.4) — do NOT add before then:
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>StepQuest tracks your route and distance during a TURBO session.</string>
+-->

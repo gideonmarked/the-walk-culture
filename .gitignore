@@ -1,0 +1,28 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+.metadata
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Setup script scratch
+.sq_backup/
+
+# Secrets / backend config (never commit)
+google-services.json
+GoogleService-Info.plist
+lib/firebase_options.dart
+*.jks
+*.keystore
+key.properties
