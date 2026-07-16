@@ -3,12 +3,16 @@
     <!-- Health Connect: passive steps (doc §3.4). Location/foreground-service
          permissions are intentionally NOT declared — they belong to the TURBO
          release (Phase 4, doc §2.4). -->
+    <!-- ONLY what the app actually reads. HealthService requests exactly one
+         data type (HealthDataType.STEPS) and only for today's window, so that
+         is all we declare. Google's Health Connect policy requires each
+         requested type to be used and justified; declaring unused types (or
+         READ_HEALTH_DATA_IN_BACKGROUND / _HISTORY, which need strong
+         justification) is a review rejection. Add a permission back the same
+         day the code starts reading it — same rule as the location/
+         foreground-service perms deferred to TURBO below. -->
     <uses-permission android:name="android.permission.health.READ_STEPS"/>
-    <uses-permission android:name="android.permission.health.READ_DISTANCE"/>
-    <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED"/>
-    <uses-permission android:name="android.permission.health.READ_FLOORS_CLIMBED"/>
-    <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_HISTORY"/>
-    <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND"/>
+    <!-- Live in-app step ticker via the device pedometer. -->
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
 
     <application
