@@ -89,4 +89,20 @@ void main() {
     await tester.pumpAndSettle();
     await teardown(tester);
   });
+
+  test('resetDailySteps zeroes today but keeps lifetime for stats', () async {
+    final controller = container.read(playerControllerProvider.notifier);
+    addTearDown(container.dispose);
+
+    await controller.addSimulatedSteps(8000);
+    var state = container.read(playerControllerProvider);
+    expect(state.todaySteps, 8000);
+    expect(state.lifetimeSteps, 8000);
+
+    await controller.resetDailySteps();
+
+    state = container.read(playerControllerProvider);
+    expect(state.todaySteps, 0); // daily cleared
+    expect(state.lifetimeSteps, 8000); // overall preserved (shown in Statistics)
+  });
 }

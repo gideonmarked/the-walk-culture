@@ -525,4 +525,16 @@ class PlayerController extends StateNotifier<PlayerState> {
     _lastSyncDate = '';
     await _save();
   }
+
+  /// Dev tool: zero out today's step count without touching lifetime totals
+  /// (which stay visible in Statistics). Handy for re-testing the daily cycle.
+  ///
+  /// Meaningful only while health sync is paused — that's the simulated-testing
+  /// mode. (With sync on, the next poll re-reads the real total; we must NOT
+  /// touch `_lastSyncDate` here, or that poll would treat the whole day as new
+  /// and re-credit it into lifetime.)
+  Future<void> resetDailySteps() async {
+    state = state.copyWith(todaySteps: 0);
+    await _save();
+  }
 }

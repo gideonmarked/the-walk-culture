@@ -1,8 +1,8 @@
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/dev_flags.dart';
 import '../../state/app_providers.dart';
 import '../../state/premium_providers.dart';
 import '../../widgets/tier_up_dialog.dart';
@@ -113,18 +113,19 @@ class HomeScreen extends ConsumerWidget {
                 label: const Text('Sync steps from Health'),
               ),
               const SizedBox(height: 8),
-              // Debug-only cheats. Never ship the ability to mint currency or
-              // freeze the health sync into a release build — that guts the IAP
-              // economy and lets anyone fake their way up the health ladder.
-              if (kDebugMode) ...[
+              // Developer tools — mint currency, freeze the health sync, reset
+              // today's steps. Gated by kDevToolsEnabled: present in debug and
+              // in DEV_TOOLS release builds, compiled OUT of a public release
+              // (they'd gut the IAP economy and fake the health ladder).
+              if (kDevToolsEnabled) ...[
                 Card(
                   child: SwitchListTile(
                     secondary: Icon(syncOn ? Icons.sync : Icons.sync_disabled),
-                    title: const Text('Health sync (debug)'),
+                    title: const Text('Walking count (dev)'),
                     subtitle: Text(
                       syncOn
-                          ? "Today's count follows your health data"
-                          : 'Paused — simulated steps stay put',
+                          ? "On — today's count follows your health data"
+                          : 'Off — simulated steps stay put',
                     ),
                     value: syncOn,
                     onChanged: (on) =>
@@ -133,6 +134,22 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 const SimulateStepsCard(),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    await controller.resetDailySteps();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context)
+                        ..hideCurrentSnackBar()
+                        ..showSnackBar(const SnackBar(
+                          content: Text(
+                              "Today's steps reset — lifetime kept in Statistics"),
+                        ));
+                    }
+                  },
+                  icon: const Icon(Icons.restart_alt),
+                  label: const Text("Reset today's steps (dev)"),
+                ),
                 const SizedBox(height: 8),
               ],
               Tooltip(

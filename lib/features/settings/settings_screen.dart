@@ -1,8 +1,8 @@
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/dev_flags.dart';
 import '../../core/health.dart';
 import '../../data/achievements_catalog.dart';
 import '../../data/shop_catalog.dart';
@@ -57,12 +57,12 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: Text(
                 'Health data is used only to count steps. Never sold, never sent to ads.'),
           ),
-          // Progress wipe is a developer tool — never expose it in a release
-          // build where a stray tap nukes a paying player's wallet.
-          if (kDebugMode) ...[
+          // Progress wipe is a developer tool — kDevToolsEnabled keeps it out of
+          // a public release, where a stray tap would nuke a paying player.
+          if (kDevToolsEnabled) ...[
             const Divider(),
             ListTile(
-              title: const Text('Reset progress (debug)',
+              title: const Text('Reset all data (dev)',
                   style: TextStyle(color: Colors.red)),
               subtitle: const Text('Wipes wallet, inventory and streak'),
               onTap: () async {

@@ -194,8 +194,20 @@ subscriber's first year. Budget 15%.
       scope you're into COPPA/family-policy territory, which restricts ads and
       loot mechanics.
 
-Debug cheats (simulate steps, sync toggle, progress reset) are already gated
-behind `kDebugMode`, so release builds don't carry them.
+Developer tools (simulate steps, walking-count toggle, reset today's steps,
+reset all data) are gated behind `kDevToolsEnabled` — present in debug and in
+test builds compiled with `--dart-define=DEV_TOOLS=true`, and compiled OUT of a
+public release that omits the flag. So build the **public** bundle plainly:
+
+```bash
+flutter build appbundle --release   # no DEV_TOOLS — tools excluded
+```
+
+and a **tester** build with the flag when you want the tools on-device:
+
+```bash
+flutter build apk --release --dart-define=DEV_TOOLS=true
+```
 
 ---
 
