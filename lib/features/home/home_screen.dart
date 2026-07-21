@@ -8,6 +8,7 @@ import '../../state/premium_providers.dart';
 import '../../widgets/tier_up_dialog.dart';
 import '../achievements/achievements_screen.dart';
 import '../bible/bible_screen.dart';
+import '../prayer/prayer_screen.dart';
 import '../character/character_profile.dart';
 import '../collection/collection_screen.dart';
 import '../settings/settings_screen.dart';
@@ -28,6 +29,7 @@ class HomeScreen extends ConsumerWidget {
     final syncOn = ref.watch(healthSyncProvider);
     final isVip = ref.watch(premiumControllerProvider).isVip;
     final bibleReady = controller.bibleReadyToday;
+    final prayerReady = controller.prayerReadyToday;
 
     // Celebrate the moment the player reaches a new currency tier (doc §6).
     ref.listen<String?>(tierUpProvider, (previous, next) {
@@ -172,6 +174,16 @@ class HomeScreen extends ConsumerWidget {
                 label: Text(bibleReady
                     ? "Read today's Bible verse"
                     : "Today's Bible verse (reward claimed)"),
+              ),
+              const SizedBox(height: 8),
+              FilledButton.tonalIcon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const PrayerScreen()),
+                ),
+                icon: const Icon(Icons.volunteer_activism_outlined),
+                label: Text(prayerReady
+                    ? 'Pray for someone'
+                    : 'Pray for someone (reward claimed)'),
               ),
             ],
           ),

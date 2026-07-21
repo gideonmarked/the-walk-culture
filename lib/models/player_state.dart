@@ -56,6 +56,9 @@ class PlayerState {
   // only be earned once per day.
   final String bibleClaimedDate;
 
+  // Same, for the daily "pray for someone" reward.
+  final String prayerClaimedDate;
+
   const PlayerState({
     this.lifetimeSteps = 0,
     this.spentSteps = 0,
@@ -77,6 +80,7 @@ class PlayerState {
     this.username = '',
     this.accountCode = '',
     this.bibleClaimedDate = '',
+    this.prayerClaimedDate = '',
   });
 
   int get spendableSteps => lifetimeSteps - spentSteps;
@@ -102,6 +106,7 @@ class PlayerState {
     String? username,
     String? accountCode,
     String? bibleClaimedDate,
+    String? prayerClaimedDate,
   }) {
     return PlayerState(
       lifetimeSteps: lifetimeSteps ?? this.lifetimeSteps,
@@ -124,6 +129,7 @@ class PlayerState {
       username: username ?? this.username,
       accountCode: accountCode ?? this.accountCode,
       bibleClaimedDate: bibleClaimedDate ?? this.bibleClaimedDate,
+      prayerClaimedDate: prayerClaimedDate ?? this.prayerClaimedDate,
     );
   }
 
@@ -148,6 +154,7 @@ class PlayerState {
         'username': username,
         'accountCode': accountCode,
         'bibleClaimedDate': bibleClaimedDate,
+        'prayerClaimedDate': prayerClaimedDate,
       };
 
   factory PlayerState.fromJson(Map<String, dynamic> json) {
@@ -186,6 +193,7 @@ class PlayerState {
       username: (json['username'] as String?) ?? '',
       accountCode: (json['accountCode'] as String?) ?? '',
       bibleClaimedDate: (json['bibleClaimedDate'] as String?) ?? '',
+      prayerClaimedDate: (json['prayerClaimedDate'] as String?) ?? '',
     );
   }
 }
