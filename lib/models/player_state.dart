@@ -59,6 +59,12 @@ class PlayerState {
   // Same, for the daily "pray for someone" reward.
   final String prayerClaimedDate;
 
+  // And for the daily Prayer Walk and Gratitude rewards. These are dates only —
+  // no reflection content ever lives in this (synced) state; the gratitude text
+  // stays in a separate on-device store (see GratitudeJournal).
+  final String prayerWalkClaimedDate;
+  final String gratitudeClaimedDate;
+
   const PlayerState({
     this.lifetimeSteps = 0,
     this.spentSteps = 0,
@@ -81,6 +87,8 @@ class PlayerState {
     this.accountCode = '',
     this.bibleClaimedDate = '',
     this.prayerClaimedDate = '',
+    this.prayerWalkClaimedDate = '',
+    this.gratitudeClaimedDate = '',
   });
 
   int get spendableSteps => lifetimeSteps - spentSteps;
@@ -107,6 +115,8 @@ class PlayerState {
     String? accountCode,
     String? bibleClaimedDate,
     String? prayerClaimedDate,
+    String? prayerWalkClaimedDate,
+    String? gratitudeClaimedDate,
   }) {
     return PlayerState(
       lifetimeSteps: lifetimeSteps ?? this.lifetimeSteps,
@@ -130,6 +140,9 @@ class PlayerState {
       accountCode: accountCode ?? this.accountCode,
       bibleClaimedDate: bibleClaimedDate ?? this.bibleClaimedDate,
       prayerClaimedDate: prayerClaimedDate ?? this.prayerClaimedDate,
+      prayerWalkClaimedDate:
+          prayerWalkClaimedDate ?? this.prayerWalkClaimedDate,
+      gratitudeClaimedDate: gratitudeClaimedDate ?? this.gratitudeClaimedDate,
     );
   }
 
@@ -155,6 +168,8 @@ class PlayerState {
         'accountCode': accountCode,
         'bibleClaimedDate': bibleClaimedDate,
         'prayerClaimedDate': prayerClaimedDate,
+        'prayerWalkClaimedDate': prayerWalkClaimedDate,
+        'gratitudeClaimedDate': gratitudeClaimedDate,
       };
 
   factory PlayerState.fromJson(Map<String, dynamic> json) {
@@ -194,6 +209,8 @@ class PlayerState {
       accountCode: (json['accountCode'] as String?) ?? '',
       bibleClaimedDate: (json['bibleClaimedDate'] as String?) ?? '',
       prayerClaimedDate: (json['prayerClaimedDate'] as String?) ?? '',
+      prayerWalkClaimedDate: (json['prayerWalkClaimedDate'] as String?) ?? '',
+      gratitudeClaimedDate: (json['gratitudeClaimedDate'] as String?) ?? '',
     );
   }
 }

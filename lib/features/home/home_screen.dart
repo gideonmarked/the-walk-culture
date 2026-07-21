@@ -8,7 +8,9 @@ import '../../state/premium_providers.dart';
 import '../../widgets/tier_up_dialog.dart';
 import '../achievements/achievements_screen.dart';
 import '../bible/bible_screen.dart';
+import '../gratitude/gratitude_screen.dart';
 import '../prayer/prayer_screen.dart';
+import '../prayer_walk/prayer_walk_screen.dart';
 import '../character/character_profile.dart';
 import '../collection/collection_screen.dart';
 import '../settings/settings_screen.dart';
@@ -30,6 +32,8 @@ class HomeScreen extends ConsumerWidget {
     final isVip = ref.watch(premiumControllerProvider).isVip;
     final bibleReady = controller.bibleReadyToday;
     final prayerReady = controller.prayerReadyToday;
+    final prayerWalkReady = controller.prayerWalkReadyToday;
+    final gratitudeReady = controller.gratitudeReadyToday;
 
     // Celebrate the moment the player reaches a new currency tier (doc §6).
     ref.listen<String?>(tierUpProvider, (previous, next) {
@@ -184,6 +188,26 @@ class HomeScreen extends ConsumerWidget {
                 label: Text(prayerReady
                     ? 'Pray for someone'
                     : 'Pray for someone (reward claimed)'),
+              ),
+              const SizedBox(height: 8),
+              FilledButton.tonalIcon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const PrayerWalkScreen()),
+                ),
+                icon: const Icon(Icons.directions_walk_outlined),
+                label: Text(prayerWalkReady
+                    ? 'Prayer walk'
+                    : 'Prayer walk (reward claimed)'),
+              ),
+              const SizedBox(height: 8),
+              FilledButton.tonalIcon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const GratitudeScreen()),
+                ),
+                icon: const Icon(Icons.favorite_border),
+                label: Text(gratitudeReady
+                    ? 'Gratitude journal'
+                    : 'Gratitude journal (reward claimed)'),
               ),
             ],
           ),

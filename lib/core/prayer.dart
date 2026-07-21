@@ -32,3 +32,20 @@ const Map<Rarity, double> kPrayerRewardOdds = {
   Rarity.epic: 3.5,
   Rarity.legendary: 0.5,
 };
+
+// ---- Prayer Walk ------------------------------------------------------------
+// Pray while you walk: your real steps are the timer. A prompt surfaces every
+// [kPrayerWalkPromptInterval] steps until you reach [kPrayerWalkTargetSteps].
+// Reuses [kPrayerRewardOdds] — the reward stays a quiet bonus, not the point.
+
+const int kPrayerWalkTargetSteps = 1000;
+const int kPrayerWalkPromptInterval = 200;
+
+/// One prompt per interval, in order. Keep them centred on the practice.
+const List<String> kPrayerWalkPrompts = [
+  'Begin with thanks — for breath, for this body that can move, for today.',
+  'Pray for the people you love. Hold each of them before God as you walk.',
+  'Bring someone who is hurting to mind. Ask for their healing and peace.',
+  'Let go of what weighs on you. Ask for a lighter, cleaner heart.',
+  'Pray over your own day — that you would walk in kindness and patience.',
+];

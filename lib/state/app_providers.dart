@@ -462,6 +462,36 @@ class PlayerController extends StateNotifier<PlayerState> {
     return result;
   }
 
+  /// Whether today's Prayer Walk reward is still available.
+  bool get prayerWalkReadyToday => state.prayerWalkClaimedDate != _todayKey;
+
+  /// Grant the daily Prayer Walk reward (rarity from [kPrayerRewardOdds]). Once
+  /// per day; null if already claimed today.
+  Future<SphereResult?> claimPrayerWalkReward() async {
+    _rollDayIfNeeded();
+    if (!prayerWalkReadyToday) return null;
+    final result = _rollAndGrantReward(kPrayerRewardOdds);
+    state = state.copyWith(prayerWalkClaimedDate: _todayKey);
+    _checkTierUp();
+    await _save();
+    return result;
+  }
+
+  /// Whether today's Gratitude reward is still available.
+  bool get gratitudeReadyToday => state.gratitudeClaimedDate != _todayKey;
+
+  /// Grant the daily Gratitude reward — always a COMMON item (gratitude is the
+  /// point, not the loot). Once per day; null if already claimed today.
+  Future<SphereResult?> claimGratitudeReward() async {
+    _rollDayIfNeeded();
+    if (!gratitudeReadyToday) return null;
+    final result = _rollAndGrantReward(const {Rarity.common: 100.0});
+    state = state.copyWith(gratitudeClaimedDate: _todayKey);
+    _checkTierUp();
+    await _save();
+    return result;
+  }
+
   /// Collect a trophy's bonus Steps. Once only — [PlayerState.claimedAchievements]
   /// is permanent, so a trophy can't be farmed by re-earning it.
   Future<bool> claimAchievement(Achievement achievement) async {
