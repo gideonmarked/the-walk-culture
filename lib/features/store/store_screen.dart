@@ -21,14 +21,34 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
   final _fmt = NumberFormat.decimalPattern();
   bool _busy = false;
 
+  /// Store-localized prices (user's region currency), keyed by product id.
+  /// Empty until fetched / when there's no real store, then the hardcoded
+  /// labels show instead.
+  Map<String, String> _prices = const {};
+
   @override
   void initState() {
     super.initState();
+    final svc = ref.read(purchaseServiceProvider);
     // Begin listening for purchase updates and restore anything Play still owes
     // this user (e.g. a purchase that completed while the app was closed).
-    final svc = ref.read(purchaseServiceProvider);
     if (svc is StorePurchaseService) svc.start();
+    _loadPrices(svc);
   }
+
+  Future<void> _loadPrices(PurchaseService svc) async {
+    final ids = [
+      for (final p in kCurrencyPacks) p.storeProductId,
+      for (final v in kVipPlans) v.storeProductId,
+    ];
+    final prices = await svc.priceLabels(ids);
+    if (mounted && prices.isNotEmpty) setState(() => _prices = prices);
+  }
+
+  /// The price to show: the store's localized price if we have it, else the
+  /// SKU's own fallback label.
+  String _price(String productId, String fallback) =>
+      _prices[productId] ?? fallback;
 
   void _toast(String msg) {
     if (!mounted) return;
@@ -83,7 +103,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
 
   Future<void> _buyPack(CurrencyPack pack) async {
     if (_busy) return;
-    if (!await _confirmSimulated('Buy ${pack.label}', pack.priceLabel)) return;
+    if (!await _confirmSimulated('Buy ${pack.label}', _price(pack.storeProductId, pack.priceLabel))) return;
     setState(() => _busy = true);
     final status = await ref.read(purchaseServiceProvider).buy(pack.storeProductId);
     if (status == PurchaseStatus.purchased) {
@@ -99,7 +119,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
 
   Future<void> _buyVip(VipPlan plan) async {
     if (_busy) return;
-    if (!await _confirmSimulated(plan.label, plan.priceLabel)) return;
+    if (!await _confirmSimulated(plan.label, _price(plan.storeProductId, plan.priceLabel))) return;
     setState(() => _busy = true);
     final status = await ref.read(purchaseServiceProvider).buy(plan.storeProductId);
     if (status == PurchaseStatus.purchased) {
@@ -161,6 +181,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
               _VipSection(
                 premium: premium,
                 onBuy: _buyVip,
+                priceOf: (plan) => _price(plan.storeProductId, plan.priceLabel),
               ),
               const SizedBox(height: 8),
               _AdRewardCard(
@@ -174,7 +195,11 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
                     style: Theme.of(context).textTheme.titleMedium),
               ),
               for (final pack in kCurrencyPacks)
-                _PackTile(pack: pack, fmt: _fmt, onBuy: () => _buyPack(pack)),
+                _PackTile(
+                    pack: pack,
+                    fmt: _fmt,
+                    price: _price(pack.storeProductId, pack.priceLabel),
+                    onBuy: () => _buyPack(pack)),
               const SizedBox(height: 24),
             ],
           ),
@@ -218,10 +243,12 @@ class _SimulatedBanner extends StatelessWidget {
 }
 
 class _VipSection extends StatelessWidget {
-  const _VipSection({required this.premium, required this.onBuy});
+  const _VipSection(
+      {required this.premium, required this.onBuy, required this.priceOf});
 
   final PremiumState premium;
   final Future<void> Function(VipPlan) onBuy;
+  final String Function(VipPlan) priceOf;
 
   @override
   Widget build(BuildContext context) {
@@ -281,7 +308,7 @@ class _VipSection extends StatelessWidget {
                               ],
                             ],
                           ),
-                          Text(plan.priceLabel,
+                          Text(priceOf(plan),
                               style: Theme.of(context).textTheme.bodySmall),
                         ],
                       ),
@@ -355,10 +382,14 @@ class _AdRewardCard extends StatelessWidget {
 
 class _PackTile extends StatelessWidget {
   const _PackTile(
-      {required this.pack, required this.fmt, required this.onBuy});
+      {required this.pack,
+      required this.fmt,
+      required this.price,
+      required this.onBuy});
 
   final CurrencyPack pack;
   final NumberFormat fmt;
+  final String price;
   final VoidCallback onBuy;
 
   @override
@@ -385,7 +416,7 @@ class _PackTile extends StatelessWidget {
           ],
         ),
         subtitle: Text('+${fmt.format(pack.steps)} steps'),
-        trailing: FilledButton(onPressed: onBuy, child: Text(pack.priceLabel)),
+        trailing: FilledButton(onPressed: onBuy, child: Text(price)),
       ),
     );
   }

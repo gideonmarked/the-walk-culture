@@ -17,6 +17,13 @@ enum PurchaseStatus { purchased, cancelled, unavailable }
 abstract class PurchaseService {
   Future<PurchaseStatus> buy(String storeProductId);
 
+  /// Localized price strings for the given products, keyed by store product id
+  /// — e.g. "$0.99", "₱55.00", "€0,99". These come from the store, which prices
+  /// per the user's Play region and currency, so display follows the user's
+  /// location automatically. Missing/unknown ids are simply absent (the UI
+  /// falls back to its own label). Empty when there's no real store.
+  Future<Map<String, String>> priceLabels(Iterable<String> storeProductIds);
+
   /// True for the placeholder. The Store screen surfaces this loudly so a
   /// simulated grant is never mistaken for a real charge.
   bool get isSimulated;
@@ -37,6 +44,10 @@ class SimulatedPurchaseService implements PurchaseService {
     await Future<void>.delayed(const Duration(milliseconds: 400));
     return PurchaseStatus.purchased;
   }
+
+  // No real store → no localized prices; the UI keeps its own labels.
+  @override
+  Future<Map<String, String>> priceLabels(Iterable<String> ids) async => const {};
 }
 
 /// Real billing in release; the simulator only in debug.

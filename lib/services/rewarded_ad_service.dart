@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../core/ad_config.dart';
+import 'consent_service.dart';
 
 /// Outcome of trying to show a rewarded ad.
 enum AdOutcome {
@@ -50,7 +51,10 @@ class AdMobRewardedAdService implements RewardedAdService {
   const AdMobRewardedAdService();
 
   @override
-  Future<AdOutcome> show() {
+  Future<AdOutcome> show() async {
+    // GDPR: never request an ad the user hasn't consented to. If consent hasn't
+    // resolved yet (or was declined in a regulated region), don't load.
+    if (!await ConsentService.canRequestAds()) return AdOutcome.failed;
     final completer = Completer<AdOutcome>();
     RewardedAd.load(
       adUnitId: rewardedAdUnitId,

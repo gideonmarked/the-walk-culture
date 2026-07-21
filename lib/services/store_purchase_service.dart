@@ -73,6 +73,20 @@ class StorePurchaseService implements PurchaseService {
   }
 
   @override
+  Future<Map<String, String>> priceLabels(Iterable<String> ids) async {
+    if (!await _iap.isAvailable()) return const {};
+    try {
+      final res = await _iap.queryProductDetails(ids.toSet());
+      // ProductDetails.price is already localized to the user's Play region and
+      // currency — this is what makes the displayed price follow their location.
+      return {for (final p in res.productDetails) p.id: p.price};
+    } catch (e) {
+      debugPrint('priceLabels failed: $e');
+      return const {};
+    }
+  }
+
+  @override
   Future<PurchaseStatus> buy(String storeProductId) async {
     if (!await _iap.isAvailable()) return PurchaseStatus.unavailable;
 
