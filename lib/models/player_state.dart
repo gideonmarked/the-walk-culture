@@ -52,6 +52,10 @@ class PlayerState {
   final String username;
   final String accountCode;
 
+  // Day key ('y-m-d') the daily Bible-verse reward was last claimed, so it can
+  // only be earned once per day.
+  final String bibleClaimedDate;
+
   const PlayerState({
     this.lifetimeSteps = 0,
     this.spentSteps = 0,
@@ -72,6 +76,7 @@ class PlayerState {
     this.placedHome = const {},
     this.username = '',
     this.accountCode = '',
+    this.bibleClaimedDate = '',
   });
 
   int get spendableSteps => lifetimeSteps - spentSteps;
@@ -96,6 +101,7 @@ class PlayerState {
     Set<String>? placedHome,
     String? username,
     String? accountCode,
+    String? bibleClaimedDate,
   }) {
     return PlayerState(
       lifetimeSteps: lifetimeSteps ?? this.lifetimeSteps,
@@ -117,6 +123,7 @@ class PlayerState {
       placedHome: placedHome ?? this.placedHome,
       username: username ?? this.username,
       accountCode: accountCode ?? this.accountCode,
+      bibleClaimedDate: bibleClaimedDate ?? this.bibleClaimedDate,
     );
   }
 
@@ -140,6 +147,7 @@ class PlayerState {
         'placedHome': placedHome.toList(),
         'username': username,
         'accountCode': accountCode,
+        'bibleClaimedDate': bibleClaimedDate,
       };
 
   factory PlayerState.fromJson(Map<String, dynamic> json) {
@@ -177,6 +185,7 @@ class PlayerState {
       placedHome: strSet(json['placedHome']),
       username: (json['username'] as String?) ?? '',
       accountCode: (json['accountCode'] as String?) ?? '',
+      bibleClaimedDate: (json['bibleClaimedDate'] as String?) ?? '',
     );
   }
 }

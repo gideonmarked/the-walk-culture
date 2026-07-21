@@ -76,16 +76,23 @@ const List<Rarity> kRarityOrder = [
 ];
 
 /// Roll a rarity for [tier] given a uniform [roll] in [0, 1). Pure/testable.
-Rarity rollSphereRarity(SphereTier tier, double roll) {
-  final pct = (roll.clamp(0.0, 0.9999999)) * 100.0;
+Rarity rollSphereRarity(SphereTier tier, double roll) =>
+    rollRarityFromOdds(tier.odds, roll, fallback: tier.baseRarity);
+
+/// Roll a rarity from any percent-weighted [odds] map (weights should sum to
+/// 100) given a uniform [roll] in [0, 1). Shared by spheres and the daily Bible
+/// reward. Pure/testable.
+Rarity rollRarityFromOdds(Map<Rarity, double> odds, double roll,
+    {Rarity fallback = Rarity.common}) {
+  final pct = roll.clamp(0.0, 0.9999999) * 100.0;
   var cumulative = 0.0;
   for (final rarity in kRarityOrder) {
-    final weight = tier.odds[rarity];
+    final weight = odds[rarity];
     if (weight == null) continue;
     cumulative += weight;
     if (pct < cumulative) return rarity;
   }
-  return tier.baseRarity; // fallback for float rounding
+  return fallback; // float-rounding safety net
 }
 
 /// Result of opening a sphere: either a cosmetic item, or a currency bonus if

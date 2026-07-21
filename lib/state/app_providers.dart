@@ -9,6 +9,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/achievements.dart';
+import '../core/bible.dart';
 import '../core/currency.dart';
 import '../core/health.dart';
 import '../core/premium.dart';
@@ -409,6 +410,39 @@ class PlayerController extends StateNotifier<PlayerState> {
     _checkTierUp();
     await _save();
     return true;
+  }
+
+  /// Whether today's Bible-verse reward is still available.
+  bool get bibleReadyToday => state.bibleClaimedDate != _todayKey;
+
+  /// Grant the daily Bible-verse reward: roll a rarity from [kBibleRewardOdds]
+  /// and hand out a random unowned shop item of that rarity (or a currency
+  /// bonus if everything at that rarity is already owned — same fallback as
+  /// spheres). Once per day; returns null if already claimed today.
+  Future<SphereResult?> claimBibleReward() async {
+    _rollDayIfNeeded();
+    if (!bibleReadyToday) return null;
+
+    final rarity = rollRarityFromOdds(kBibleRewardOdds, _rng.nextDouble());
+    final candidates = kShopCatalog
+        .where((i) => i.rarity == rarity && !state.owned.contains(i.id))
+        .toList();
+
+    var next = state.copyWith(bibleClaimedDate: _todayKey);
+    SphereResult result;
+    if (candidates.isNotEmpty) {
+      final item = candidates[_rng.nextInt(candidates.length)];
+      next = next.copyWith(owned: {...next.owned, item.id});
+      result = SphereResult(rarity: rarity, item: item);
+    } else {
+      final bonus = fallbackBonusFor(rarity);
+      next = next.copyWith(lifetimeSteps: next.lifetimeSteps + bonus);
+      result = SphereResult(rarity: rarity, bonusSteps: bonus);
+    }
+    state = next;
+    _checkTierUp();
+    await _save();
+    return result;
   }
 
   /// Collect a trophy's bonus Steps. Once only — [PlayerState.claimedAchievements]
