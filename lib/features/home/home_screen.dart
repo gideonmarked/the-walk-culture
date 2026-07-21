@@ -37,7 +37,7 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('StepQuest'),
+        title: const Text('The Walk Culture'),
         actions: [
           IconButton(
             tooltip: isVip ? 'Store · VIP active' : 'Store',

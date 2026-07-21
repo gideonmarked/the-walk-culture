@@ -6,13 +6,13 @@ import 'features/onboarding/onboarding_screen.dart';
 import 'features/shell/root_scaffold.dart';
 import 'state/app_providers.dart';
 
-class StepQuestApp extends ConsumerWidget {
-  const StepQuestApp({super.key});
+class WalkCultureApp extends ConsumerWidget {
+  const WalkCultureApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
-      title: 'StepQuest',
+      title: 'The Walk Culture',
       debugShowCheckedModeBanner: false,
       theme: buildTheme(Brightness.light),
       darkTheme: buildTheme(Brightness.dark),

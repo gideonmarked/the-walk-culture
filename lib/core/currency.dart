@@ -1,4 +1,4 @@
-/// Currency ladder & conversion — StepQuest design doc §5.
+/// Currency ladder & conversion — The Walk Culture design doc §5.
 ///
 /// Prototype uses the strict uniform 1000x ladder. Per the doc, swap this for
 /// the recommended "B + C hybrid" (soften above Gold + a prestige track) later.

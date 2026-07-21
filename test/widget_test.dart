@@ -16,7 +16,7 @@ void main() {
     final container = ProviderContainer();
 
     await tester.pumpWidget(
-      UncontrolledProviderScope(container: container, child: const StepQuestApp()),
+      UncontrolledProviderScope(container: container, child: const WalkCultureApp()),
     );
     await tester.pumpAndSettle();
 
@@ -27,7 +27,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Lands on the main shell.
-    expect(find.text('StepQuest'), findsOneWidget); // Home app bar title
+    expect(find.text('The Walk Culture'), findsOneWidget); // Home app bar title
     expect(find.text('Shop'), findsWidgets); // nav destination label
 
     // Unmount, then dispose providers so the auto-sync timer is cancelled.

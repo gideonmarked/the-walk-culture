@@ -16,7 +16,7 @@
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
 
     <application
-        android:label="step_quest"
+        android:label="The Walk Culture"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

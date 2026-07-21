@@ -86,7 +86,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ],
           const AboutListTile(
-            applicationName: 'StepQuest',
+            applicationName: 'The Walk Culture',
             applicationVersion: '0.1.0 (Phase 0 prototype)',
           ),
         ],

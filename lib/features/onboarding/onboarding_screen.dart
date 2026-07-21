@@ -41,7 +41,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               const Spacer(),
               const Center(child: Text('👣', style: TextStyle(fontSize: 72))),
               const SizedBox(height: 24),
-              Text('StepQuest',
+              Text('The Walk Culture',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.headlineMedium),
               const SizedBox(height: 12),

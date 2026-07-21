@@ -1,8 +1,8 @@
-# Deploying StepQuest on the cheapest possible footing
+# Deploying The Walk Culture on the cheapest possible footing
 
 ## What runs where (read this first)
 
-StepQuest is a **mobile app**, not a website. There is no server to "host the
+The Walk Culture is a **mobile app**, not a website. There is no server to "host the
 app on" — no VPS, no container, no domain. It compiles to a binary that runs
 **on the phone**. You *distribute* that binary; you don't serve it.
 

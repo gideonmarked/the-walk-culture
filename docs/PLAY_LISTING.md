@@ -64,7 +64,7 @@ Google reviews every Health Connect app by hand. You must justify each data type
 
 **Data types requested: `READ_STEPS` only.**
 
-> Justification: StepQuest converts the user's daily step count into an in-game
+> Justification: The Walk Culture converts the user's daily step count into an in-game
 > currency. The step total is the app's core mechanic — it determines the
 > currency earned, the character's health level, daily quest progress, and
 > streaks. No other health data type is read. Steps are read only for the
@@ -116,10 +116,12 @@ already show a "Drop rates" breakdown in-app ✅.
 
 ## 5. Store listing copy
 
-**App name** (30 chars max) — `step_quest` is a placeholder, must change:
+**App name** (30 chars max):
 ```
-StepQuest: Walk & Collect
+The Walk Culture
 ```
+(“The Walk Culture: Walk & Collect” is 32 chars — over the limit. Keep the name
+alone; the tagline goes in the short description below.)
 
 **Short description** (80 chars):
 ```
@@ -130,7 +132,7 @@ Turn every step into treasure. Walk, earn, and dress up your character.
 ```
 Your steps are worth something.
 
-StepQuest turns the walking you already do into a currency you can actually
+The Walk Culture turns the walking you already do into a currency you can actually
 spend. Every step you take is counted, banked, and converted into Steps —
 climbing a ladder of tiers from Copper to Silver, Gold, and beyond.
 
@@ -177,8 +179,12 @@ review. Health & Fitness is the safer call.*
 
 ## 6. Remaining blockers
 
-- [ ] **Rename the app** — `step_quest` / `com.perfeos.step_quest` is a
-      placeholder. The package name is **permanent once published**; decide now.
+- [x] ~~Rename the app~~ **display name → "The Walk Culture"** (app bar,
+      launcher label, onboarding, About, docs). **Still open:** the
+      applicationId is `com.perfeos.step_quest` — internal and invisible to
+      users, but **permanent once published**. Change it (e.g.
+      `com.perfeos.thewalkculture`) before the first upload if you want it to
+      match the name; it also renames the IAP product IDs.
 - [ ] **Real upload keystore** — release currently signs with the *debug* key
       and Play will reject it. See [`DEPLOY.md`](DEPLOY.md) §4.
 - [ ] **App icon** — still the Flutter default.

@@ -1,6 +1,6 @@
 # Backend Setup & Provider Choice (Phase 1)
 
-How to take StepQuest from the current **local-only prototype**
+How to take The Walk Culture from the current **local-only prototype**
 (SharedPreferences) to a **server-authoritative** backend — which the design doc
 says is mandatory or the currency is trivially cheated (§2.2, §4). This doc gives
 a provider recommendation, the schema, the validated step-credit flow, and a

@@ -9,5 +9,5 @@ Future<void> main() async {
   // No-op unless the build was given SUPABASE_URL / SUPABASE_ANON_KEY, and it
   // swallows its own errors — a backend outage must never block launch.
   await CloudSyncService.initialize();
-  runApp(const ProviderScope(child: StepQuestApp()));
+  runApp(const ProviderScope(child: WalkCultureApp()));
 }

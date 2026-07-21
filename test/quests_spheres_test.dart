@@ -14,7 +14,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const StepQuestApp(),
+        child: const WalkCultureApp(),
       ),
     );
     await tester.pumpAndSettle();
