@@ -249,7 +249,7 @@ end; $$;
 -- ---------------------------------------------------------------------------
 -- Rewarded ads: the daily cap lives here, not on the client.
 -- ---------------------------------------------------------------------------
-create or replace function claim_ad_reward(p_reward_steps int default 2000)
+create or replace function claim_ad_reward(p_reward_steps int default 20000)
 returns bigint
 language plpgsql security definer as $$
 declare
@@ -261,7 +261,8 @@ declare
   v_new bigint;
 begin
   if v_user is null then raise exception 'not authenticated'; end if;
-  if p_reward_steps < 0 or p_reward_steps > 2000 then
+  -- Cap must match kAdRewardSteps in lib/core/premium.dart (2 Silver = 20,000).
+  if p_reward_steps < 0 or p_reward_steps > 20000 then
     raise exception 'invalid reward';                 -- client can't inflate it
   end if;
 

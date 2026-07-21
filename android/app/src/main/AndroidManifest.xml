@@ -19,6 +19,12 @@
         android:label="The Walk Culture"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- AdMob App ID (required — the SDK crashes on launch without it). This
+             is the app-level ID; it does NOT decide test-vs-real ads — the ad
+             UNIT id does (see lib/core/ad_config.dart). Safe to ship. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-8276197101210812~7737324093"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

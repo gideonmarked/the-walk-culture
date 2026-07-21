@@ -122,8 +122,11 @@ const int kVipDailyStipend = 5000;
 
 // ---- Rewarded ads -----------------------------------------------------------
 
-/// Spendable steps granted for watching one rewarded ad.
-const int kAdRewardSteps = 2000;
+/// Spendable steps granted for watching one rewarded ad — 2 Silver on the 100x
+/// ladder. Balanced against the packs: ~2 ads = the $0.99 Pouch, so IAP still
+/// matters for bigger sums. If you change this, bump the cap in the server's
+/// claim_ad_reward() (supabase/schema.sql) to match, or the backend rejects it.
+const int kAdRewardSteps = 20000;
 
 /// Base daily cap on rewarded ads; VIPs get [kVipExtraAdsPerDay] more.
 const int kAdRewardsPerDay = 5;
