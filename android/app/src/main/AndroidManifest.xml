@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Health Connect: passive steps (doc §3.4). Location/foreground-service
          permissions are intentionally NOT declared — they belong to the TURBO
@@ -25,6 +26,23 @@
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-8276197101210812~7737324093"/>
+
+        <!-- google_mobile_ads bundles WorkManager, whose androidx.startup
+             auto-initializer crashes at launch ("Failed to create an instance
+             of androidx.work.impl.WorkDatabase"). Remove the startup init so
+             WorkManager initializes lazily on demand instead — the ads SDK does
+             not need it at boot. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
