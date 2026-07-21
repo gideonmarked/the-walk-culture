@@ -13,6 +13,7 @@ import '../core/currency.dart';
 import '../core/health.dart';
 import '../core/premium.dart';
 import '../core/quests.dart';
+import '../core/social.dart';
 import '../core/spheres.dart';
 import '../core/streaks.dart';
 import '../data/shop_catalog.dart';
@@ -201,6 +202,12 @@ class PlayerController extends StateNotifier<PlayerState> {
     // progress made before this feature existed.
     state = state.copyWith(
         highestTierReached: highestTierIndex(state.lifetimeSteps));
+    // Mint a stable share code on first run. Server-assigned + uniqueness-checked
+    // once the backend is live; this local code is what the Profile shows until
+    // then (and the seed the server adopts on first sync).
+    if (state.accountCode.isEmpty) {
+      state = state.copyWith(accountCode: generateCode());
+    }
     // doc §2.3: sync on app open — but only if the user hasn't paused sync.
     // Read prefs directly: healthSyncProvider's own load may not have run yet.
     if (prefs.getBool(HealthSyncController.prefsKey) ?? true) {
@@ -520,8 +527,18 @@ class PlayerController extends StateNotifier<PlayerState> {
   }
 
   /// Debug helper (Settings): wipe progress.
+  /// Set the player's chosen display name. Server enforces uniqueness once live;
+  /// locally we just trim and store it.
+  Future<void> setUsername(String name) async {
+    state = state.copyWith(username: name.trim());
+    await _save();
+  }
+
   Future<void> resetProgress() async {
-    state = const PlayerState();
+    // Keep the share code stable across a dev reset so friends' links don't
+    // break; a fresh code is only minted when there's genuinely none.
+    final keptCode = state.accountCode;
+    state = PlayerState(accountCode: keptCode);
     _lastSyncDate = '';
     await _save();
   }

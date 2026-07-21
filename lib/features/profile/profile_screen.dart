@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../character/character_screen.dart';
 import '../house/house_screen.dart';
+import '../social/social_screen.dart';
 
 /// Profile hub with two tabs: Avatar (character customiser) and Home (the room).
 class ProfileScreen extends StatelessWidget {
@@ -14,6 +15,15 @@ class ProfileScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Profile'),
+          actions: [
+            IconButton(
+              tooltip: 'Friends & Groups',
+              icon: const Icon(Icons.people_outline),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SocialScreen()),
+              ),
+            ),
+          ],
           bottom: const TabBar(
             tabs: [
               Tab(icon: Icon(Icons.face), text: 'Avatar'),

@@ -45,6 +45,13 @@ class PlayerState {
   final Map<ItemSlot, String> equipped; // wearable slots (single per slot)
   final Set<String> placedHome; // home-decor items placed in the room
 
+  // Social identity. `accountCode` is the shareable 7-char code (e.g. A7A43B7)
+  // others use to friend you; generated once, then stable. `username` is chosen
+  // by the player. Both become server-authoritative (unique) once the backend
+  // is live — until then this local copy is what the Profile shows.
+  final String username;
+  final String accountCode;
+
   const PlayerState({
     this.lifetimeSteps = 0,
     this.spentSteps = 0,
@@ -63,6 +70,8 @@ class PlayerState {
     this.owned = const {},
     this.equipped = const {},
     this.placedHome = const {},
+    this.username = '',
+    this.accountCode = '',
   });
 
   int get spendableSteps => lifetimeSteps - spentSteps;
@@ -85,6 +94,8 @@ class PlayerState {
     Set<String>? owned,
     Map<ItemSlot, String>? equipped,
     Set<String>? placedHome,
+    String? username,
+    String? accountCode,
   }) {
     return PlayerState(
       lifetimeSteps: lifetimeSteps ?? this.lifetimeSteps,
@@ -104,6 +115,8 @@ class PlayerState {
       owned: owned ?? this.owned,
       equipped: equipped ?? this.equipped,
       placedHome: placedHome ?? this.placedHome,
+      username: username ?? this.username,
+      accountCode: accountCode ?? this.accountCode,
     );
   }
 
@@ -125,6 +138,8 @@ class PlayerState {
         'owned': owned.toList(),
         'equipped': {for (final e in equipped.entries) e.key.name: e.value},
         'placedHome': placedHome.toList(),
+        'username': username,
+        'accountCode': accountCode,
       };
 
   factory PlayerState.fromJson(Map<String, dynamic> json) {
@@ -160,6 +175,8 @@ class PlayerState {
       owned: strSet(json['owned']),
       equipped: equipped,
       placedHome: strSet(json['placedHome']),
+      username: (json['username'] as String?) ?? '',
+      accountCode: (json['accountCode'] as String?) ?? '',
     );
   }
 }
