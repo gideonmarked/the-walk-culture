@@ -1,4 +1,4 @@
-# Pixel-Art Guide — characters, skin tones, hair, and health body types
+# Pixel-Art Guide — characters, skin tones, hair, and health poses
 
 How to actually *draw* the art for The Walk Culture. Pairs with
 [`ASSETS.md`](ASSETS.md) (which covers where files go and how they load). Read
@@ -17,12 +17,14 @@ a beautiful hat that sits 3px too high ruins every character that wears it.
   pixel edges only).
 - **Skin tones & hair colours:** draw the *shape* once, then **swap the palette**
   to make every colour. You are not redrawing — you are recolouring.
-- **Health body types:** the body changes shape from **obese → very fit** as
-  health rises — **7 body types, one per health level**. To keep this from
-  exploding, **the head and feet never move between them**, so only body-wrapping
-  clothes (base, tops, bottoms) need a version per body type; everything else
-  (hair, face, hats, glasses, shoes, pets) is drawn **once**. Adjacent bodies
-  differ only slightly, so you're nudging edges, not redrawing.
+- **Health poses:** the character's **posture** reflects health — **laying down
+  (worst) → crawling → hunched → walking upright (best)**, one pose per health
+  level (7 total), and the top pose is **animated** later. Because a pose moves
+  the whole figure, cosmetics can't reuse across the downed poses — so the
+  **downed poses (laying/crawling/hunched) are simple base-only sprites**, and
+  **cosmetics layer only on the upright poses** (where the head/feet anchors from
+  §2 hold). That keeps clothing drawn **once** and makes "get healthy and your
+  outfit shows" the hook. Full detail in §4.
 
 ---
 
@@ -62,16 +64,19 @@ are (x from left, y from top), origin top-left, y increases downward.
     x0        22   42        64
 ```
 
-**Fixed forever, across all body types and all items:**
+**Fixed for the upright poses (`_3`–`_6`) and every cosmetic:**
 - **Head box:** centred, `x 22–42`, `y 4–24`. Faces and hair are drawn to this box.
 - **Shoulder line:** `y ≈ 24`. Tops start here.
 - **Hip line:** `y ≈ 40`. Bottoms start here.
 - **Ankle line:** `y ≈ 58`, **ground line `y = 64`**. Feet always touch the bottom.
 - **Centre line:** `x = 32`. The figure is symmetric around it.
 
-Because the head box and feet never move, **hats, hair, faces, glasses, and shoes
-are drawn once and fit every character.** Only the region *between* shoulder and
-ankle (the body) changes shape — that's §4.
+These anchors hold for the **upright walking poses** (health levels 3–6), where
+cosmetics layer on top. The **downed poses** (laying/crawling/hunched, levels
+0–2) don't use this skeleton — the figure is horizontal — so they're authored as
+free-form full-body sprites with no cosmetic layering (see §4). Because the
+upright anchor is shared, **hats, hair, faces, glasses, shoes, and clothing are
+drawn once and fit every upright level.**
 
 ---
 
@@ -95,104 +100,88 @@ Each tone is a ramp of **outline / shadow / mid / highlight**. Starter palette
 | `base_dark`   | `#1f140d` | `#4a2e1e` | `#5e3b28` | `#78503a` |
 
 **Method:**
-1. Draw the base body (per body type, §4) using exactly those 4 slots.
+1. Draw the base body (per pose, §4) using exactly those 4 slots.
 2. Duplicate the file, swap the 4 skin colours to the next tone, export.
-3. Result: 5 skin files per body type, but only **one** actual drawing.
+3. Result: 5 skin files per pose, but only **one** actual drawing.
 
 > Keep skin to those 3 shades + outline. More shades = more work per tone and a
 > muddier look at 64px.
 
 ---
 
-## 4. Health body types — obese → very fit (7 bodies)
+## 4. Health poses — laying down → walking upright
 
-This is the mechanic: as the player's **health level** rises, the body visibly
-morphs from **obese** to **very fit** — **one body per level, 7 in total**. Because
-they're a smooth progression, you draw the two extremes first and the middle five
-are small steps between them, not seven independent illustrations.
+This is the mechanic: as the player's **health level** rises, their **posture**
+improves — from flat on the ground to standing tall and moving. The compositor
+picks the pose by the `healthLevel` **index (0–6)**, so that index **is** the
+base sprite's suffix.
 
-### The 7 bodies map 1:1 to health level
-
-The character compositor picks the body by the player's `healthLevel` **index
-(0–6)**, so that index **is** the file suffix.
-
-| Level | Name | Suffix | Silhouette |
+| Level | Name | Suffix | Pose |
 |---|---|---|---|
-| 0 | Idle | `_0` | most **obese** — widest belly & hips, round torso |
-| 1 | Sluggish | `_1` | very heavy |
-| 2 | Strolling | `_2` | heavy / soft |
-| 3 | Steady | `_3` | neutral, straight build (the starting body) |
-| 4 | Brisk | `_4` | lean, waist starting to define |
-| 5 | Swift | `_5` | fit, broader shoulders, trim waist |
-| 6 | Soaring | `_6` | **very fit** — athletic, defined, broadest shoulders |
+| 0 | Idle | `_0` | **laying down** — flat on the ground |
+| 1 | Sluggish | `_1` | **crawling** — on hands & knees |
+| 2 | Strolling | `_2` | **hunched** — bent forward, trudging |
+| 3 | Steady | `_3` | standing, slight stoop — walking |
+| 4 | Brisk | `_4` | upright, purposeful walk |
+| 5 | Swift | `_5` | tall, striding |
+| 6 | Soaring | `_6` | upright & moving — **animated later** (walk/run cycle) |
 
-The suffix is the numeric level **index**, not the name — so level names can
-change freely without renaming any files.
+### The consequence: a pose moves the whole figure
 
-### The rule that keeps 7 bodies affordable
+Unlike a body-shape morph, changing *pose* relocates the head and feet — laying
+and crawling are horizontal, there's no "head at top, feet at bottom." That
+breaks the paper-doll reuse. The model that handles it (and is *cheaper* than
+per-body clothing):
 
-**Only the body between the shoulder line and the ankle line changes. The head
-box and the feet stay identical across all 7.** So:
+**Two tiers:**
 
-- **Vary by body (7× each):** `base` (body), `top`, `bottom`.
-- **Draw once, fits all 7:** `hair`, `face`, `hat`, `accessory`, `shoes`, `pet`
-  — they attach to the fixed head box or feet.
+- **Downed poses — `_0` laying, `_1` crawling, `_2` hunched:** authored as
+  **whole-figure base sprites, no cosmetic layering.** These are "you're unwell"
+  states; the goal is to get up, not to model an outfit on the floor. Draw them
+  free-form in the 64×64 frame (the §2 anchors don't apply).
+- **Upright poses — `_3`…`_6`:** all share the **same upright anchor** (§2 head
+  box + feet + shoulder/hip lines), so **every cosmetic layers on them and is
+  drawn once.** Keep the torso anchor identical across `_3`–`_6` so a top/hat
+  fits all four; put the posture difference in the **legs/stance** (straightening
+  and lengthening the stride from 3→6), not the torso.
+- **`_6` is the future animated frame.** Author it as a static upright now; add
+  the walk-cycle frames later (naming decided when we build the animator).
 
-Silhouette progression at 64px — only the torso/belly/hip **width** changes;
-shoulders gently broaden toward fit; head (`x22–42`) and feet (`y64`) never move:
+### What this costs (it's cheaper than the old plan)
 
-```
-        _0 obese        _3 balanced        _6 very fit
- head    x22–42          x22–42             x22–42        ← identical
- should. x18–46          x20–44             x16–48 (broad)
- chest   x15–49          x22–42             x20–44
- BELLY   x12–52 ●●       x23–41             x24–40 (flat)
- hips    x14–50          x23–41             x23–41
- feet    y64             y64                y64           ← identical
-```
-
-Bodies `_1`,`_2` interpolate between `_0` and `_3`; `_4`,`_5` between `_3` and
-`_6`. Keep the **outline colour and skin ramp identical** across all seven — only
-the *outline shape* moves. Author `_0`, `_3`, `_6` first (the anchors), then fill
-`_1 _2 _4 _5` by nudging edges.
+- **Base body:** 7 pose sprites × skin tones — but 7 drawings recoloured via
+  palette swap (§3), so 5 tones = **35 files from 7 drawings**. The 3 downed poses
+  are genuinely distinct drawings; `_3`–`_6` are one upright body with small
+  stance changes.
+- **Clothing / hair / hats / face / shoes / accessories / pets: drawn ONCE**
+  (for the upright anchor), shown on levels 3–6. **No per-pose variants** — this
+  is the big saving versus the body-shape plan.
+- **Trade-off:** equipped cosmetics don't show while downed (0–2). That's the
+  intended hook — *stand up (get healthy) and your outfit appears.*
 
 ### Naming contract (art ↔ code)
 
-Body-varying slots append the level index `_0`…`_6`:
-
 ```
 assets/character/base/base_medium_0.png … base_medium_6.png   (× each skin tone)
-assets/character/tops/top_hoodie_0.png  … top_hoodie_6.png
-assets/character/bottoms/bottom_jeans_0.png … bottom_jeans_6.png
+assets/character/tops/top_hoodie.png       (single upright sprite — no suffix)
+assets/character/hair/hair_ponytail.png    (single upright sprite)
+assets/character/hats/hat_cap.png          (single upright sprite)
 ```
 
-Body-independent slots keep the plain id (no suffix):
+Only the **base** gets the `_0`…`_6` pose suffix. Cosmetics stay single-file and
+render only on the upright levels.
 
-```
-assets/character/hair/hair_ponytail.png
-assets/character/hats/hat_cap.png
-assets/character/face/face_smile.png
-```
+> **Code note:** the compositor doesn't do this yet — today it loads
+> `assets/<slot>/<id>.png` flat with one standing body. Wiring it means: pick the
+> base by `_$healthLevel`; for levels 0–2 draw only the base; for 3–6 draw base +
+> equipped cosmetics on the shared anchor; later, animate `_6`. I can build that
+> when you're ready — this is the contract it'll follow.
 
-> **Code note:** the app does **not** yet pick the body by health — today it loads
-> `assets/<slot>/<id>.png` flat. Adding the `_$healthLevel` selection is a small
-> change to the compositor (append the index for base/top/bottom, fall back to the
-> plain file when a variant is missing). I can wire it when you're ready — this
-> naming is the contract it will follow.
+### Alternative (expensive)
 
-### Cost, plainly
-
-Seven bodies multiplies your torso/leg clothing by 7:
-- A top or bottom = **7 sprites** each.
-- A skin tone = **7 base shapes**, but still one *drawing* per body recoloured
-  (§3): so 5 tones × 7 bodies = **35 base files from 7 drawings**.
-- Hair / face / hats / shoes / accessories / pets = **unchanged** (1 each).
-
-This is a real commitment — the clothing count is the driver. To keep it sane:
-keep the number of **body-varying garments** small (a handful of tops/bottoms,
-each in 7), and lean on hats/hair/accessories (drawn once) for variety. The
-smooth-progression trick (anchors + interpolate) is what makes 7 bodies × a
-garment closer to "2 real drawings + 5 tweaks" than 7 from scratch.
+Full per-pose customisation — every cosmetic redrawn for all 7 poses — is only
+worth it if showing outfits *while crawling* matters. Say so and I'll spec it,
+but the two-tier model above is the recommended default.
 
 ---
 
@@ -244,29 +233,29 @@ Workflow for "N styles × M colours":
 
 Prioritised so the game looks real fast, cheapest first:
 
-1. **3 anchor bodies** — `_0` (obese), `_3` (balanced), `_6` (very fit) — in the
-   `base_medium` tone. This alone proves the morph at its extremes.
-2. **Fill the in-between bodies** `_1 _2 _4 _5` by nudging edges between the
-   anchors (§4).
+1. **The 4 key pose bases** in `base_medium`: `_0` laying, `_2` hunched, `_3`
+   upright, `_6` upright (the future animated one). This alone shows the posture
+   arc from floor to standing.
+2. **Fill `_1` crawling, `_4` `_5`** (the remaining poses).
 3. Recolour all 7 to the other **4 skin tones** (palette swap, §3).
-4. **1 face** (`face_smile`) — fits every body.
-5. **2–3 hair styles**, each in **3–4 colours** (§5).
-6. **1 top + 1 bottom**, each in all **7 bodies** (author `_0/_3/_6`, interpolate
-   the rest) — proves clothing-per-body.
-7. **1 pair of shoes**, **1 hat** — body-independent, one each.
+4. **1 face**, **2–3 hair styles** (each in 3–4 colours), **1 top**, **1 bottom**,
+   **1 hat**, **1 shoes** — each a **single upright sprite** (they show on the
+   standing poses 3–6).
 
-That gives a fully dressable character that visibly morphs obese→fit as you walk
-— the core promise. The base + one outfit is the bulk of the work; everything
-head-and-feet is drawn once.
+That gives a character that visibly rises from the floor to walking as you get
+healthier, and shows off an outfit once upright — the core promise. The 7 pose
+bases are the bulk of the work; every cosmetic is drawn once.
 
 ---
 
 ## 8. Checklist before you hand off a sprite
 
 - [ ] 64×64, transparent, RGBA, no anti-aliasing.
-- [ ] Head box `x22–42 y4–24`, feet on ground line `y64`, centre `x32`.
 - [ ] Light source top-left; shadows bottom-right.
 - [ ] Skin = 3 shades + outline from the ramp; hair = 3 shades + outline.
-- [ ] Body-varying slot (base/top/bottom)? Delivered as `_0`…`_6` (7 bodies).
-- [ ] Body-independent slot (hair/face/hat/accessory/shoes/pet)? Single file.
+- [ ] **Base body?** Delivered as `_0`…`_6` (7 poses). Upright poses `_3`–`_6`
+      use the §2 anchors (head `x22–42 y4–24`, feet `y64`, centre `x32`); downed
+      poses `_0`–`_2` are free-form in the frame.
+- [ ] **Cosmetic** (top/bottom/hair/face/hat/accessory/shoes/pet)? A single
+      upright sprite on the §2 anchors — no pose suffix.
 - [ ] File name matches the catalog `id`. GUIDE layer removed.

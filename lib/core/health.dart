@@ -17,13 +17,15 @@ class HealthLevel {
 
 /// Worst → best. Index into this list IS the level.
 const List<HealthLevel> kHealthLevels = [
-  HealthLevel('Idle', '🛋️'),
-  HealthLevel('Sluggish', '🐌'),
-  HealthLevel('Strolling', '🚶'),
-  HealthLevel('Steady', '😊'),
-  HealthLevel('Brisk', '🏃'),
-  HealthLevel('Swift', '💨'),
-  HealthLevel('Soaring', '🦅'),
+  // The name is a walking-pace theme; the art shows the matching POSTURE, from
+  // laying flat (Idle) up to striding tall (Soaring, animated later).
+  HealthLevel('Idle', '🛌'), // laying down
+  HealthLevel('Sluggish', '🐌'), // crawling
+  HealthLevel('Strolling', '🚶'), // hunched, trudging
+  HealthLevel('Steady', '🙂'), // upright, walking
+  HealthLevel('Brisk', '🏃'), // brisk walk
+  HealthLevel('Swift', '💨'), // striding
+  HealthLevel('Soaring', '🦅'), // upright & moving (animated later)
 ];
 
 /// New players start in the middle, with room to fall as well as climb.

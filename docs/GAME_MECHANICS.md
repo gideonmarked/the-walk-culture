@@ -43,15 +43,17 @@ steps (`kHoldSteps = 5000`, `kClimbSteps = 10000`):
 - **≥ 10,000** → climb one level
 
 Seven levels, worst → best; new players start at **Steady** (`kStartHealthLevel = 3`).
-The names run on a walking-pace theme, and the character's body shifts obese→fit
-across them:
+The names run on a walking-pace theme, and the character's **posture** rises with
+them — from laying on the floor, through crawling and hunching, up to walking
+tall (the top pose animated later):
 
 `Idle · Sluggish · Strolling · Steady · Brisk · Swift · Soaring`
+`(laying → crawling → hunched → upright walking →→ striding)`
 
 Never more than one level of movement per day, clamped at both ends. It is
 **not** a user-set goal — the thresholds are fixed. (Planned: the character's
-*body shape* shifts obese→fit with this ladder — see
-[`PIXEL_ART_GUIDE.md`](PIXEL_ART_GUIDE.md).)
+*posture* rises with this ladder — laying → crawling → hunched → walking upright,
+top pose animated — see [`PIXEL_ART_GUIDE.md`](PIXEL_ART_GUIDE.md).)
 
 ## 3. Streaks
 
