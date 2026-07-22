@@ -138,7 +138,7 @@ always-on 2× → up to **4×** for a VIP who also pops a boost.
 Paper-doll customisation: equip one cosmetic per slot
 (`base · bottom · top · shoes · face · hair · hat · accessory · pet`), composited
 back→front. Home decor is placed in a room (room scene still a placeholder). Art
-spec + the health body-morph system: [`PIXEL_ART_GUIDE.md`](PIXEL_ART_GUIDE.md).
+spec + the health posture system: [`PIXEL_ART_GUIDE.md`](PIXEL_ART_GUIDE.md).
 
 ## 10. Spiritual disciplines
 
