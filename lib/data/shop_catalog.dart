@@ -10,23 +10,23 @@ const List<ShopItem> _kSeedCatalog = [
   // ============================ CHARACTER ============================
 
   // --- Body / skin tone (base layer) ---
-  ShopItem(id: 'base_light', name: 'Light Skin', emoji: '🧑🏻', slot: ItemSlot.base, rarity: Rarity.common, priceTier: 'Steps', priceAmount: 100),
-  ShopItem(id: 'base_fair', name: 'Fair Skin', emoji: '🧑🏼', slot: ItemSlot.base, rarity: Rarity.common, priceTier: 'Steps', priceAmount: 100),
-  ShopItem(id: 'base_medium', name: 'Medium Skin', emoji: '🧑🏽', slot: ItemSlot.base, rarity: Rarity.common, priceTier: 'Steps', priceAmount: 100),
-  ShopItem(id: 'base_brown', name: 'Brown Skin', emoji: '🧑🏾', slot: ItemSlot.base, rarity: Rarity.common, priceTier: 'Steps', priceAmount: 100),
-  ShopItem(id: 'base_dark', name: 'Dark Skin', emoji: '🧑🏿', slot: ItemSlot.base, rarity: Rarity.common, priceTier: 'Steps', priceAmount: 100),
+  ShopItem(id: 'base_light', name: 'Light Skin', emoji: '🧑🏻', slot: ItemSlot.base, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 100),
+  ShopItem(id: 'base_fair', name: 'Fair Skin', emoji: '🧑🏼', slot: ItemSlot.base, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 100),
+  ShopItem(id: 'base_medium', name: 'Medium Skin', emoji: '🧑🏽', slot: ItemSlot.base, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 100),
+  ShopItem(id: 'base_brown', name: 'Brown Skin', emoji: '🧑🏾', slot: ItemSlot.base, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 100),
+  ShopItem(id: 'base_dark', name: 'Dark Skin', emoji: '🧑🏿', slot: ItemSlot.base, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 100),
 
   // --- Face ---
-  ShopItem(id: 'face_smile', name: 'Smile', emoji: '🙂', slot: ItemSlot.face, rarity: Rarity.common, priceTier: 'Steps', priceAmount: 200),
-  ShopItem(id: 'face_grin', name: 'Big Grin', emoji: '😄', slot: ItemSlot.face, rarity: Rarity.common, priceTier: 'Steps', priceAmount: 200),
+  ShopItem(id: 'face_smile', name: 'Smile', emoji: '🙂', slot: ItemSlot.face, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 200),
+  ShopItem(id: 'face_grin', name: 'Big Grin', emoji: '😄', slot: ItemSlot.face, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 200),
   ShopItem(id: 'face_wink', name: 'Wink', emoji: '😉', slot: ItemSlot.face, rarity: Rarity.uncommon, priceTier: 'Copper', priceAmount: 10),
   ShopItem(id: 'face_cool', name: 'Cool', emoji: '😎', slot: ItemSlot.face, rarity: Rarity.uncommon, priceTier: 'Copper', priceAmount: 20),
   ShopItem(id: 'face_freckles', name: 'Freckles', emoji: '😊', slot: ItemSlot.face, rarity: Rarity.rare, priceTier: 'Silver', priceAmount: 1),
 
   // --- Hair ---
-  ShopItem(id: 'hair_short', name: 'Short Hair', emoji: '👦', slot: ItemSlot.hair, rarity: Rarity.common, priceTier: 'Steps', priceAmount: 300),
-  ShopItem(id: 'hair_buzz', name: 'Buzz Cut', emoji: '🧑‍🦲', slot: ItemSlot.hair, rarity: Rarity.common, priceTier: 'Steps', priceAmount: 300),
-  ShopItem(id: 'hair_long', name: 'Long Hair', emoji: '👩', slot: ItemSlot.hair, rarity: Rarity.common, priceTier: 'Steps', priceAmount: 400),
+  ShopItem(id: 'hair_short', name: 'Short Hair', emoji: '👦', slot: ItemSlot.hair, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 300),
+  ShopItem(id: 'hair_buzz', name: 'Buzz Cut', emoji: '🧑‍🦲', slot: ItemSlot.hair, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 300),
+  ShopItem(id: 'hair_long', name: 'Long Hair', emoji: '👩', slot: ItemSlot.hair, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 400),
   ShopItem(id: 'hair_curly', name: 'Curly Hair', emoji: '👩‍🦱', slot: ItemSlot.hair, rarity: Rarity.uncommon, priceTier: 'Copper', priceAmount: 20),
   ShopItem(id: 'hair_redhead', name: 'Redhead', emoji: '👩‍🦰', slot: ItemSlot.hair, rarity: Rarity.uncommon, priceTier: 'Copper', priceAmount: 20),
   ShopItem(id: 'hair_ponytail', name: 'Ponytail', emoji: '👱‍♀️', slot: ItemSlot.hair, rarity: Rarity.uncommon, priceTier: 'Copper', priceAmount: 30),
@@ -36,28 +36,28 @@ const List<ShopItem> _kSeedCatalog = [
   ShopItem(id: 'hair_rainbow', name: 'Rainbow Hair', emoji: '🌈', slot: ItemSlot.hair, rarity: Rarity.epic, priceTier: 'Gold', priceAmount: 1),
 
   // --- Tops ---
-  ShopItem(id: 'top_tee', name: 'Athletic Tee', emoji: '👕', slot: ItemSlot.top, rarity: Rarity.common, priceTier: 'Steps', priceAmount: 400),
-  ShopItem(id: 'top_tank', name: 'Tank Top', emoji: '🎽', slot: ItemSlot.top, rarity: Rarity.common, priceTier: 'Steps', priceAmount: 500),
+  ShopItem(id: 'top_tee', name: 'Athletic Tee', emoji: '👕', slot: ItemSlot.top, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 400),
+  ShopItem(id: 'top_tank', name: 'Tank Top', emoji: '🎽', slot: ItemSlot.top, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 500),
   ShopItem(id: 'top_blouse', name: 'Blouse', emoji: '👚', slot: ItemSlot.top, rarity: Rarity.uncommon, priceTier: 'Copper', priceAmount: 30),
   ShopItem(id: 'top_hoodie', name: 'Hoodie', emoji: '🥋', slot: ItemSlot.top, rarity: Rarity.uncommon, priceTier: 'Copper', priceAmount: 60),
   ShopItem(id: 'top_coat', name: 'Winter Coat', emoji: '🧥', slot: ItemSlot.top, rarity: Rarity.rare, priceTier: 'Silver', priceAmount: 1),
   ShopItem(id: 'top_kimono', name: 'Kimono', emoji: '🥻', slot: ItemSlot.top, rarity: Rarity.epic, priceTier: 'Gold', priceAmount: 2),
 
   // --- Bottoms ---
-  ShopItem(id: 'bottom_shorts', name: 'Running Shorts', emoji: '🩳', slot: ItemSlot.bottom, rarity: Rarity.common, priceTier: 'Steps', priceAmount: 400),
-  ShopItem(id: 'bottom_jeans', name: 'Jeans', emoji: '👖', slot: ItemSlot.bottom, rarity: Rarity.common, priceTier: 'Steps', priceAmount: 600),
+  ShopItem(id: 'bottom_shorts', name: 'Running Shorts', emoji: '🩳', slot: ItemSlot.bottom, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 400),
+  ShopItem(id: 'bottom_jeans', name: 'Jeans', emoji: '👖', slot: ItemSlot.bottom, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 600),
   ShopItem(id: 'bottom_skirt', name: 'Skirt', emoji: '👗', slot: ItemSlot.bottom, rarity: Rarity.uncommon, priceTier: 'Copper', priceAmount: 30),
   ShopItem(id: 'bottom_cargo', name: 'Cargo Pants', emoji: '🧵', slot: ItemSlot.bottom, rarity: Rarity.rare, priceTier: 'Silver', priceAmount: 1),
 
   // --- Shoes ---
-  ShopItem(id: 'shoes_run', name: 'Running Shoes', emoji: '👟', slot: ItemSlot.shoes, rarity: Rarity.common, priceTier: 'Steps', priceAmount: 500),
-  ShopItem(id: 'shoes_sandal', name: 'Sandals', emoji: '🩴', slot: ItemSlot.shoes, rarity: Rarity.common, priceTier: 'Steps', priceAmount: 500),
+  ShopItem(id: 'shoes_run', name: 'Running Shoes', emoji: '👟', slot: ItemSlot.shoes, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 500),
+  ShopItem(id: 'shoes_sandal', name: 'Sandals', emoji: '🩴', slot: ItemSlot.shoes, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 500),
   ShopItem(id: 'shoes_boot', name: 'Hiking Boots', emoji: '🥾', slot: ItemSlot.shoes, rarity: Rarity.uncommon, priceTier: 'Copper', priceAmount: 40),
   ShopItem(id: 'shoes_heels', name: 'Party Heels', emoji: '👠', slot: ItemSlot.shoes, rarity: Rarity.rare, priceTier: 'Silver', priceAmount: 2),
 
   // --- Hats ---
-  ShopItem(id: 'hat_cap', name: 'Runner Cap', emoji: '🧢', slot: ItemSlot.hat, rarity: Rarity.common, priceTier: 'Steps', priceAmount: 500),
-  ShopItem(id: 'hat_beanie', name: 'Cozy Beanie', emoji: '🧶', slot: ItemSlot.hat, rarity: Rarity.common, priceTier: 'Steps', priceAmount: 900),
+  ShopItem(id: 'hat_cap', name: 'Runner Cap', emoji: '🧢', slot: ItemSlot.hat, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 500),
+  ShopItem(id: 'hat_beanie', name: 'Cozy Beanie', emoji: '🧶', slot: ItemSlot.hat, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 900),
   ShopItem(id: 'hat_straw', name: 'Straw Hat', emoji: '👒', slot: ItemSlot.hat, rarity: Rarity.uncommon, priceTier: 'Copper', priceAmount: 30),
   ShopItem(id: 'hat_top', name: 'Top Hat', emoji: '🎩', slot: ItemSlot.hat, rarity: Rarity.uncommon, priceTier: 'Copper', priceAmount: 50),
   ShopItem(id: 'hat_grad', name: 'Graduation Cap', emoji: '🎓', slot: ItemSlot.hat, rarity: Rarity.rare, priceTier: 'Silver', priceAmount: 2),
@@ -79,7 +79,7 @@ const List<ShopItem> _kSeedCatalog = [
   ShopItem(id: 'pet_dragon', name: 'Baby Dragon', emoji: '🐲', slot: ItemSlot.pet, rarity: Rarity.legendary, priceTier: 'Titanium', priceAmount: 1, inShop: false),
 
   // ============================== HOME ==============================
-  ShopItem(id: 'home_plant', name: 'Potted Plant', emoji: '🪴', slot: ItemSlot.home, rarity: Rarity.common, priceTier: 'Steps', priceAmount: 400),
+  ShopItem(id: 'home_plant', name: 'Potted Plant', emoji: '🪴', slot: ItemSlot.home, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 400),
   ShopItem(id: 'home_rug', name: 'Area Rug', emoji: '🟫', slot: ItemSlot.home, rarity: Rarity.uncommon, priceTier: 'Copper', priceAmount: 30),
   ShopItem(id: 'home_lamp', name: 'Cozy Lamp', emoji: '🪔', slot: ItemSlot.home, rarity: Rarity.uncommon, priceTier: 'Copper', priceAmount: 50),
   ShopItem(id: 'home_clock', name: 'Wall Clock', emoji: '🕰️', slot: ItemSlot.home, rarity: Rarity.rare, priceTier: 'Silver', priceAmount: 1),

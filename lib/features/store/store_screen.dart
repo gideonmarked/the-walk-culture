@@ -110,7 +110,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
       await ref.read(playerControllerProvider.notifier).grantBonusSteps(pack.steps);
       await ref.read(premiumControllerProvider.notifier)
           .recordPurchasedSteps(pack.steps);
-      _toast('+${_fmt.format(pack.steps)} steps added to your wallet');
+      _toast('+${_fmt.format(pack.steps)} Pebbles added to your wallet');
     } else if (status == PurchaseStatus.unavailable) {
       _toast('Store unavailable — billing not configured yet');
     }
@@ -157,7 +157,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
         await ref
             .read(playerControllerProvider.notifier)
             .grantBonusSteps(kAdRewardSteps);
-        _toast('+${_fmt.format(kAdRewardSteps)} steps for watching!');
+        _toast('+${_fmt.format(kAdRewardSteps)} Pebbles for watching!');
       }
     } else if (outcome == AdOutcome.failed) {
       _toast('No ad available right now — try again shortly');
@@ -191,7 +191,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
               const SizedBox(height: 8),
               Padding(
                 padding: const EdgeInsets.fromLTRB(4, 12, 4, 4),
-                child: Text('Step packs',
+                child: Text('Pebble packs',
                     style: Theme.of(context).textTheme.titleMedium),
               ),
               for (final pack in kCurrencyPacks)
@@ -356,7 +356,7 @@ class _AdRewardCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleMedium),
                   Text(
                     canWatch
-                        ? '+${NumberFormat.decimalPattern().format(kAdRewardSteps)} steps · $watched/$limit today'
+                        ? '+${NumberFormat.decimalPattern().format(kAdRewardSteps)} Pebbles · $watched/$limit today'
                         : 'Daily limit reached ($limit/$limit)',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
@@ -415,7 +415,7 @@ class _PackTile extends StatelessWidget {
             ],
           ],
         ),
-        subtitle: Text('+${fmt.format(pack.steps)} steps'),
+        subtitle: Text('+${fmt.format(pack.steps)} Pebbles'),
         trailing: FilledButton(onPressed: onBuy, child: Text(price)),
       ),
     );

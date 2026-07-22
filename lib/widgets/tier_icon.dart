@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Per-tier colours for the currency footprint icon (doc §5 ladder).
 const Map<String, Color> kTierColors = {
-  'Steps': Color(0xFFFFFFFF), // white
+  'Pebbles': Color(0xFF9E9E9E), // stone grey
   'Copper': Color(0xFFB87333),
   'Silver': Color(0xFFC0C0C0),
   'Gold': Color(0xFFFFD700),

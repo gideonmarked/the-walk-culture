@@ -158,7 +158,7 @@ class _OpenedTodayCard extends StatelessWidget {
       );
     } else if (reward != null && reward.bonusSteps > 0) {
       trailing =
-          Text('+${fmt.format(reward.bonusSteps)} Steps', style: subtle);
+          Text('+${fmt.format(reward.bonusSteps)} Pebbles', style: subtle);
     } else {
       trailing = Text('Opened', style: subtle);
     }
@@ -408,7 +408,7 @@ class _SphereOpenDialogState extends State<SphereOpenDialog>
                       Text(
                         r.item != null
                             ? '${r.item!.name}\nAdded to your inventory.'
-                            : 'You own everything at this rarity —\n+${fmt.format(r.bonusSteps)} Steps instead',
+                            : 'You own everything at this rarity —\n+${fmt.format(r.bonusSteps)} Pebbles instead',
                         textAlign: TextAlign.center,
                       ),
                     ],

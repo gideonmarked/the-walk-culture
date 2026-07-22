@@ -30,7 +30,7 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             title: const Text('Statistics'),
             subtitle: Text('$trophies trophies · '
-                '${fmt.format(player.lifetimeSteps)} lifetime steps · '
+                '${fmt.format(player.lifetimeSteps)} lifetime Pebbles · '
                 '${player.owned.length}/$shopItems items'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.of(context).push(

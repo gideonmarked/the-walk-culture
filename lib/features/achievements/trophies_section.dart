@@ -104,7 +104,7 @@ class _TrophyRow extends ConsumerWidget {
               ..hideCurrentSnackBar()
               ..showSnackBar(SnackBar(
                 content: Text('${achievement.name} — '
-                    '+${fmt.format(achievement.reward)} Steps claimed!'),
+                    '+${fmt.format(achievement.reward)} Pebbles claimed!'),
               ));
           }
         },

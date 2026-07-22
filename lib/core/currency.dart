@@ -4,8 +4,11 @@
 /// the recommended "B + C hybrid" (soften above Gold + a prestige track) later.
 library;
 
+// The base currency unit is "Pebbles" (renamed from "Steps" to avoid colliding
+// with the physical steps you walk). 1 walked step still earns 1 Pebble; the
+// wallet then rolls Pebbles up into Copper, Silver, Gold, and the gem tiers.
 const List<String> kTierNames = [
-  'Steps',
+  'Pebbles',
   'Copper',
   'Silver',
   'Gold',

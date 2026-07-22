@@ -22,9 +22,9 @@ your character's health level can be raised *only* by walking.
   **lifetime steps**. Currency is **derived**: `spendable = lifetime − spent`.
 - **Currency ladder — 100× per tier** (`kTierMultiplier = 100`):
 
-  | Tier | Steps | Tier | Steps |
+  | Tier | Pebbles | Tier | Pebbles |
   |---|---|---|---|
-  | Steps | 1 | Titanium | 100,000,000 |
+  | Pebbles | 1 | Titanium | 100,000,000 |
   | Copper | 100 | Platinum | 10¹⁰ |
   | Silver | 10,000 | Tanzanite | 10¹² |
   | Gold | 1,000,000 | Emerald | 10¹⁴ |
@@ -62,7 +62,7 @@ the 🔥 streak; a gap resets the current streak but keeps your best.
 
 ## 4. Daily quests
 
-Three fixed quests, reset daily, each paying **bonus steps** on claim:
+Three fixed quests, reset daily, each paying **bonus Pebbles** on claim:
 
 | Quest | Target | Reward |
 |---|---|---|
@@ -90,13 +90,13 @@ Resets daily.
 Opening rolls a rarity from the tier's odds, then grants a **random unowned shop
 item** of that rarity — or, if you already own everything at that rarity, a
 **currency fallback** (Common 500 → Uncommon 2,000 → Rare 10,000 → Epic 50,000 →
-Legendary 200,000 → Celestial 1,000,000 steps). Celestial is real-money only and
+Legendary 200,000 → Celestial 1,000,000 Pebbles). Celestial is real-money only and
 has **guaranteed** contents (never a paid random box — keeps clear of loot-box
 law).
 
 ## 6. Trophies
 
-**33 achievements**, four difficulty bands, each with a claimable **step reward**
+**33 achievements**, four difficulty bands, each with a claimable **Pebble reward**
 (claim once — permanent, never re-pays):
 
 | Difficulty | Reward |
@@ -117,7 +117,7 @@ currency tier (enforced server-side too, not just hidden in the UI):
 
 | Rarity | Priced in | Reach to unlock |
 |---|---|---|
-| Common | Steps | — |
+| Common | Pebbles | — |
 | Uncommon | Copper | 100 |
 | Rare | Silver | 10,000 |
 | Epic | Gold | 1,000,000 |
@@ -164,9 +164,9 @@ proxied through the backend (never bundled — ESV is copyrighted).
   **+5,000 daily stipend** (`kVipDailyStipend`), **+1 daily ad**, profile badge.
   Server-authoritative — the app can't grant itself VIP.
 - **Currency packs** (consumable IAP): Pouch 10k, Sack 60k, Chest 150k, Vault
-  400k steps. Prices display in the **user's local currency** (Google Play
+  400k Pebbles. Prices display in the **user's local currency** (Google Play
   localises `ProductDetails.price` by region).
-- **Rewarded ads** (Google AdMob): **+20,000 steps** (2 Silver) per watch, cap
+- **Rewarded ads** (Google AdMob): **+20,000 Pebbles** (2 Silver) per watch, cap
   **5/day** (6 for VIP), **enforced server-side** (`claim_ad_reward`). Real ads
   are gated behind **GDPR consent** (UMP) and a `REAL_ADS` build flag; dev builds
   serve test ads. Purchases validated **server-side** (receipt → Edge Function →
@@ -177,7 +177,7 @@ proxied through the backend (never bundled — ESV is copyrighted).
 - **Account code** — a stable 7-char code (e.g. `A7A43B7`, ambiguous chars
   excluded) minted once per account. Add friends by **code or username**.
 - **Groups** — your **1st group is free**; the 2nd/3rd/4th cost **50k / 200k /
-  500k** steps, doubling beyond (a deliberate nudge toward real-money currency).
+  500k** Pebbles, doubling beyond (a deliberate nudge toward real-money currency).
   Charged server-side.
 - **Group house** — a shared room each member improves with **their own**
   currency (placeholder screen; schema in place).

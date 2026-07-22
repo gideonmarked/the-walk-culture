@@ -187,7 +187,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
             ),
             Text(cost == 0
                 ? 'Your first group is free.'
-                : 'This group costs ${_fmt.format(cost)} steps.'),
+                : 'This group costs ${_fmt.format(cost)} Pebbles.'),
           ],
         ),
         actions: [
@@ -392,14 +392,14 @@ class _GroupsTab extends StatelessWidget {
                     const SizedBox(height: 4),
                     const Text('Your first group is free. Each next one costs more:'),
                     const SizedBox(height: 6),
-                    Text('2nd · ${fmt.format(groupSlotCost(1))} steps'),
-                    Text('3rd · ${fmt.format(groupSlotCost(2))} steps'),
-                    Text('4th · ${fmt.format(groupSlotCost(3))} steps'),
+                    Text('2nd · ${fmt.format(groupSlotCost(1))} Pebbles'),
+                    Text('3rd · ${fmt.format(groupSlotCost(2))} Pebbles'),
+                    Text('4th · ${fmt.format(groupSlotCost(3))} Pebbles'),
                     const SizedBox(height: 6),
                     Text(
                       nextCost == 0
                           ? 'Your next group is free.'
-                          : 'Your next group costs ${fmt.format(nextCost)} steps.',
+                          : 'Your next group costs ${fmt.format(nextCost)} Pebbles.',
                       style: TextStyle(
                           color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.w600),

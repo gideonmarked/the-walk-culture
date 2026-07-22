@@ -11,13 +11,13 @@
 
 -- ---------------------------------------------------------------------------
 -- Currency ladder — 100x per tier (MUST match lib/core/currency.dart).
---   Steps=1 Copper=100 Silver=10k Gold=1e6 Titanium=1e8 Platinum=1e10
+--   Pebbles=1 Copper=100 Silver=10k Gold=1e6 Titanium=1e8 Platinum=1e10
 --   Tanzanite=1e12 Emerald=1e14 Ruby=1e16 Diamond=1e18   (all fit in bigint)
 -- ---------------------------------------------------------------------------
 create or replace function tier_index(p_tier text) returns int
 language sql immutable as $$
   select case p_tier
-    when 'Steps' then 0 when 'Copper' then 1 when 'Silver' then 2
+    when 'Pebbles' then 0 when 'Copper' then 1 when 'Silver' then 2
     when 'Gold' then 3 when 'Titanium' then 4 when 'Platinum' then 5
     when 'Tanzanite' then 6 when 'Emerald' then 7 when 'Ruby' then 8
     when 'Diamond' then 9 else null end;
@@ -74,7 +74,7 @@ create table if not exists profile (
   display_name text,
   avatar_config jsonb default '{}'::jsonb,
   home_config   jsonb default '{}'::jsonb,
-  health_level int not null default 3,   -- index into kHealthLevels (Balanced)
+  health_level int not null default 3,   -- index into kHealthLevels (Steady)
   streak_current int default 0,
   streak_best int default 0,
   -- Whole-PlayerState cloud save, so progress survives reinstall / new device.

@@ -25,7 +25,7 @@ class QuestsScreen extends ConsumerWidget {
           const Divider(height: 32),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Text('Complete quests for bonus Steps. Resets daily.'),
+            child: Text('Complete quests for bonus Pebbles. Resets daily.'),
           ),
           for (final quest in kDailyQuests)
             _QuestTile(
@@ -39,7 +39,7 @@ class QuestsScreen extends ConsumerWidget {
                 final ok = await controller.claimQuest(quest);
                 if (ok && context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('+${quest.reward} Steps claimed!')),
+                    SnackBar(content: Text('+${quest.reward} Pebbles claimed!')),
                   );
                 }
               },

@@ -33,21 +33,21 @@ const List<CurrencyPack> kCurrencyPacks = [
   CurrencyPack(
     id: 'pack_pouch',
     storeProductId: 'com.perfeos.step_quest.currency.pouch',
-    label: 'Step Pouch',
+    label: 'Pebble Pouch',
     steps: 10000,
     priceLabel: '\$0.99',
   ),
   CurrencyPack(
     id: 'pack_sack',
     storeProductId: 'com.perfeos.step_quest.currency.sack',
-    label: 'Step Sack',
+    label: 'Pebble Sack',
     steps: 60000,
     priceLabel: '\$4.99',
   ),
   CurrencyPack(
     id: 'pack_chest',
     storeProductId: 'com.perfeos.step_quest.currency.chest',
-    label: 'Step Chest',
+    label: 'Pebble Chest',
     steps: 150000,
     priceLabel: '\$9.99',
     bestValue: true,
@@ -55,7 +55,7 @@ const List<CurrencyPack> kCurrencyPacks = [
   CurrencyPack(
     id: 'pack_vault',
     storeProductId: 'com.perfeos.step_quest.currency.vault',
-    label: 'Step Vault',
+    label: 'Pebble Vault',
     steps: 400000,
     priceLabel: '\$19.99',
   ),
@@ -111,7 +111,7 @@ const List<VipPlan> kVipPlans = [
 /// stay in sync. Deliberately convenience + cosmetic + soft-economy: money must
 /// never buy a health outcome (that would corrupt the whole premise).
 const List<String> kVipPerks = [
-  '2× step-currency earning, always on',
+  '2× Pebble earning, always on',
   'Daily VIP currency stipend',
   'An extra free rewarded ad each day',
   'Exclusive VIP badge on your profile',

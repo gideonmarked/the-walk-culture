@@ -53,7 +53,7 @@ enum Rarity { common, uncommon, rare, epic, legendary, celestial }
 /// actually banked Gold. Prestige items override this to sit even higher on the
 /// ladder (Titanium → Diamond) — see [_kPrestige] in the catalog.
 const Map<Rarity, String> kRarityTier = {
-  Rarity.common: 'Steps',
+  Rarity.common: 'Pebbles',
   Rarity.uncommon: 'Copper',
   Rarity.rare: 'Silver',
   Rarity.epic: 'Gold',

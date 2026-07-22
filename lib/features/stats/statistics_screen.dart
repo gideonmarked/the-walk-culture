@@ -81,14 +81,14 @@ class StatisticsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Statistics')),
       body: ListView(
         children: [
-          const _Header('Steps'),
-          _Stat('Steps today', fmt.format(steps)),
-          _Stat('Lifetime steps earned', fmt.format(player.lifetimeSteps)),
-          _Stat('Steps spent', fmt.format(player.spentSteps)),
-          _Stat('Steps to spend', fmt.format(player.spendableSteps)),
-          _Stat('Bonus steps from spheres today',
+          const _Header('Pebbles'),
+          _Stat('Steps today', fmt.format(steps)), // walked steps (activity)
+          _Stat('Lifetime Pebbles earned', fmt.format(player.lifetimeSteps)),
+          _Stat('Pebbles spent', fmt.format(player.spentSteps)),
+          _Stat('Pebbles to spend', fmt.format(player.spendableSteps)),
+          _Stat('Bonus Pebbles from spheres today',
               fmt.format(sphereBonusSteps)),
-          _Stat('Bonus steps from trophies', fmt.format(claimedSteps)),
+          _Stat('Bonus Pebbles from trophies', fmt.format(claimedSteps)),
 
           const _Header('Health'),
           _Stat('Current level', level.name),
@@ -108,8 +108,8 @@ class StatisticsScreen extends ConsumerWidget {
 
           const _Header('Premium'),
           _Stat('VIP', premium.isVip ? '${premium.vipDaysLeft} days left' : 'Not active'),
-          _Stat('Steps from purchases', fmt.format(premium.purchasedStepsTotal)),
-          _Stat('Steps from ads', fmt.format(premium.adStepsTotal)),
+          _Stat('Pebbles from purchases', fmt.format(premium.purchasedStepsTotal)),
+          _Stat('Pebbles from ads', fmt.format(premium.adStepsTotal)),
           _Stat('Ads watched today',
               '${premium.adRewardsDay == dayKey(DateTime.now()) ? premium.adRewardsToday : 0}'
                   ' / ${premium.adRewardLimit}'),
@@ -162,7 +162,7 @@ class StatisticsScreen extends ConsumerWidget {
                   '${kAchievements.where((a) => a.difficulty == d).length}',
             ),
           _Stat('Ready to claim', '${claimable.length}'),
-          _Stat('Unclaimed step rewards', fmt.format(unclaimedSteps)),
+          _Stat('Unclaimed Pebble rewards', fmt.format(unclaimedSteps)),
           const SizedBox(height: 24),
         ],
       ),

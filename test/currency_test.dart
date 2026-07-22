@@ -7,21 +7,21 @@ void main() {
     test('breaks a total into base-100 tiers', () {
       // 1*Gold + 2*Silver + 3*Copper + 4*Steps at 100x = 1_020_304.
       final w = toWallet(1020304);
-      expect(w['Steps'], 4);
+      expect(w['Pebbles'], 4);
       expect(w['Copper'], 3);
       expect(w['Silver'], 2);
       expect(w['Gold'], 1);
     });
 
     test('handles zero and negatives safely', () {
-      expect(toWallet(0)['Steps'], 0);
-      expect(toWallet(-50)['Steps'], 0);
+      expect(toWallet(0)['Pebbles'], 0);
+      expect(toWallet(-50)['Pebbles'], 0);
     });
   });
 
   group('priceInSteps', () {
     test('converts tier prices to raw steps at 100x', () {
-      expect(priceInSteps('Steps', 500), 500);
+      expect(priceInSteps('Pebbles', 500), 500);
       expect(priceInSteps('Copper', 3), 300);
       expect(priceInSteps('Silver', 2), 20000);
       expect(priceInSteps('Gold', 1), 1000000);
@@ -30,7 +30,7 @@ void main() {
 
   group('rarity tier gate', () {
     test('each rarity is priced in its own ascending tier', () {
-      expect(kRarityTier[Rarity.common], 'Steps');
+      expect(kRarityTier[Rarity.common], 'Pebbles');
       expect(kRarityTier[Rarity.uncommon], 'Copper');
       expect(kRarityTier[Rarity.rare], 'Silver');
       expect(kRarityTier[Rarity.epic], 'Gold');

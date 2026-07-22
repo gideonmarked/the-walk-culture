@@ -30,7 +30,7 @@ void main() {
 
     // Every section is present.
     for (final section in [
-      'Steps',
+      'Pebbles',
       'Health',
       'Streak',
       'Wallet',
