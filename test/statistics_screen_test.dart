@@ -46,7 +46,7 @@ void main() {
     expect(find.text('Holding this level'), findsOneWidget);
     expect(find.text('Reached'), findsWidgets); // hold line already cleared
     expect(find.text('4,000'), findsWidgets); // still to climb
-    expect(find.text('Balanced'), findsOneWidget); // starting health level
+    expect(find.text('Steady'), findsOneWidget); // starting health level
     expect(find.text('4 of 7'), findsOneWidget); // rung on the ladder
 
     // Nothing spent or won yet.

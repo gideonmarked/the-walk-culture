@@ -17,17 +17,17 @@ class HealthLevel {
 
 /// Worst → best. Index into this list IS the level.
 const List<HealthLevel> kHealthLevels = [
-  HealthLevel('Withered', '🍂'),
-  HealthLevel('Ailing', '🤒'),
-  HealthLevel('Weary', '😮‍💨'),
-  HealthLevel('Balanced', '😐'),
-  HealthLevel('Vital', '✨'),
-  HealthLevel('Thriving', '🌿'),
-  HealthLevel('Radiant', '🌟'),
+  HealthLevel('Idle', '🛋️'),
+  HealthLevel('Sluggish', '🐌'),
+  HealthLevel('Strolling', '🚶'),
+  HealthLevel('Steady', '😊'),
+  HealthLevel('Brisk', '🏃'),
+  HealthLevel('Swift', '💨'),
+  HealthLevel('Soaring', '🦅'),
 ];
 
 /// New players start in the middle, with room to fall as well as climb.
-const int kStartHealthLevel = 3; // Balanced
+const int kStartHealthLevel = 3; // Steady
 
 int get _maxLevel => kHealthLevels.length - 1;
 

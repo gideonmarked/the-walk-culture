@@ -42,9 +42,11 @@ steps (`kHoldSteps = 5000`, `kClimbSteps = 10000`):
 - **5,000–9,999** → hold your level
 - **≥ 10,000** → climb one level
 
-Seven levels, worst → best; new players start at **Balanced** (`kStartHealthLevel = 3`):
+Seven levels, worst → best; new players start at **Steady** (`kStartHealthLevel = 3`).
+The names run on a walking-pace theme, and the character's body shifts obese→fit
+across them:
 
-`Withered · Ailing · Weary · Balanced · Vital · Thriving · Radiant`
+`Idle · Sluggish · Strolling · Steady · Brisk · Swift · Soaring`
 
 Never more than one level of movement per day, clamped at both ends. It is
 **not** a user-set goal — the thresholds are fixed. (Planned: the character's

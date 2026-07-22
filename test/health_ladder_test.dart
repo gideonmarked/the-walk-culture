@@ -27,23 +27,23 @@ void main() {
     });
 
     test('clamps at both ends of the ladder', () {
-      expect(applyDailyHealth(0, 0), 0); // Withered can't go lower
-      expect(applyDailyHealth(6, kClimbSteps), 6); // Radiant can't go higher
+      expect(applyDailyHealth(0, 0), 0); // Idle can't go lower
+      expect(applyDailyHealth(6, kClimbSteps), 6); // Soaring can't go higher
       expect(clampHealthLevel(-5), 0);
       expect(clampHealthLevel(99), kHealthLevels.length - 1);
     });
 
     test('the ladder runs worst to best', () {
       expect(kHealthLevels.map((l) => l.name).toList(), [
-        'Withered',
-        'Ailing',
-        'Weary',
-        'Balanced',
-        'Vital',
-        'Thriving',
-        'Radiant',
+        'Idle',
+        'Sluggish',
+        'Strolling',
+        'Steady',
+        'Brisk',
+        'Swift',
+        'Soaring',
       ]);
-      expect(healthLevelInfo(kStartHealthLevel).name, 'Balanced');
+      expect(healthLevelInfo(kStartHealthLevel).name, 'Steady');
       expect(isBottomHealth(0), isTrue);
       expect(isTopHealth(kHealthLevels.length - 1), isTrue);
     });
@@ -75,14 +75,14 @@ void main() {
 
     test('a big day climbs a level and resets the day', () async {
       final container =
-          await bootWithYesterday(daySteps: 12000, level: 3); // Balanced
+          await bootWithYesterday(daySteps: 12000, level: 3); // Steady
       addTearDown(container.dispose);
 
       // Any state touch rolls the day; simulate walking 0 steps into the new one.
       await container.read(playerControllerProvider.notifier).addSimulatedSteps(0);
 
       final state = container.read(playerControllerProvider);
-      expect(state.healthLevel, 4); // → Vital
+      expect(state.healthLevel, 4); // → Brisk
       expect(state.todaySteps, 0); // fresh day
       expect(state.claimedQuests, isEmpty); // dailies reset with the roll
       expect(state.openedSpheres, isEmpty);
@@ -104,7 +104,7 @@ void main() {
 
       await container.read(playerControllerProvider.notifier).addSimulatedSteps(0);
 
-      expect(container.read(playerControllerProvider).healthLevel, 2); // → Weary
+      expect(container.read(playerControllerProvider).healthLevel, 2); // → Strolling
     });
 
     test('a brand-new save is not punished for having no yesterday', () async {
@@ -117,7 +117,7 @@ void main() {
 
       await container.read(playerControllerProvider.notifier).addSimulatedSteps(0);
 
-      // Would be Ailing/Weary if the empty "yesterday" (0 steps) were graded.
+      // Would be Sluggish/Strolling if the empty "yesterday" (0 steps) were graded.
       expect(container.read(playerControllerProvider).healthLevel,
           kStartHealthLevel);
     });

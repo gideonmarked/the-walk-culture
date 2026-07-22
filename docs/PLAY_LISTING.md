@@ -142,8 +142,8 @@ manual logging. Just walk.
 
 KEEP YOUR CHARACTER HEALTHY
 Your character's wellbeing follows yours. Walk 5,000 steps to hold your level,
-10,000 to climb one. Fall short and they slip. Work your way from Withered up to
-Radiant — and keep them there.
+10,000 to climb one. Fall short and they slip. Work your way from Idle up to
+Soaring — and keep them there.
 
 OPEN MYSTERY SPHERES
 Hit a step goal to make a sphere glow, then crack it open. Each one you open

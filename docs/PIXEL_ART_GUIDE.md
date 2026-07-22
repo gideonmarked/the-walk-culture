@@ -118,18 +118,16 @@ The character compositor picks the body by the player's `healthLevel` **index
 
 | Level | Name | Suffix | Silhouette |
 |---|---|---|---|
-| 0 | Withered\* | `_0` | most **obese** — widest belly & hips, round torso |
-| 1 | Ailing | `_1` | very heavy |
-| 2 | Weary | `_2` | heavy / soft |
-| 3 | Balanced | `_3` | neutral, straight build (the starting body) |
-| 4 | Vital | `_4` | lean, waist starting to define |
-| 5 | Thriving | `_5` | fit, broader shoulders, trim waist |
-| 6 | Radiant | `_6` | **very fit** — athletic, defined, broadest shoulders |
+| 0 | Idle | `_0` | most **obese** — widest belly & hips, round torso |
+| 1 | Sluggish | `_1` | very heavy |
+| 2 | Strolling | `_2` | heavy / soft |
+| 3 | Steady | `_3` | neutral, straight build (the starting body) |
+| 4 | Brisk | `_4` | lean, waist starting to define |
+| 5 | Swift | `_5` | fit, broader shoulders, trim waist |
+| 6 | Soaring | `_6` | **very fit** — athletic, defined, broadest shoulders |
 
-\* Heads-up: "Withered" reads as *frail/thin*, but body `_0` is drawn **obese**
-per the design. If that clashes, rename the level (e.g. "Sluggish") rather than
-the art — the suffix is the numeric index, so level *names* can change freely
-without touching filenames.
+The suffix is the numeric level **index**, not the name — so level names can
+change freely without renaming any files.
 
 ### The rule that keeps 7 bodies affordable
 
