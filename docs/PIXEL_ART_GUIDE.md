@@ -18,10 +18,11 @@ a beautiful hat that sits 3px too high ruins every character that wears it.
 - **Skin tones & hair colours:** draw the *shape* once, then **swap the palette**
   to make every colour. You are not redrawing — you are recolouring.
 - **Health body types:** the body changes shape from **obese → very fit** as
-  health rises. To keep this affordable, there are only **3 body types**, and
-  **the head and feet never move between them** — so only body-wrapping clothes
-  (base, tops, bottoms) need one version per body type. Everything else (hair,
-  face, hats, glasses, shoes, pets) is drawn **once**.
+  health rises — **7 body types, one per health level**. To keep this from
+  exploding, **the head and feet never move between them**, so only body-wrapping
+  clothes (base, tops, bottoms) need a version per body type; everything else
+  (hair, face, hats, glasses, shoes, pets) is drawn **once**. Adjacent bodies
+  differ only slightly, so you're nudging edges, not redrawing.
 
 ---
 
@@ -103,59 +104,68 @@ Each tone is a ramp of **outline / shadow / mid / highlight**. Starter palette
 
 ---
 
-## 4. Health body types — obese → very fit
+## 4. Health body types — obese → very fit (7 bodies)
 
-This is the mechanic: as the player's **health level** rises (Withered → Radiant,
-7 levels), the body visibly shifts from **heavy** to **fit**. Drawing 7 distinct
-bodies × every clothing item is not affordable, so:
+This is the mechanic: as the player's **health level** rises, the body visibly
+morphs from **obese** to **very fit** — **one body per level, 7 in total**. Because
+they're a smooth progression, you draw the two extremes first and the middle five
+are small steps between them, not seven independent illustrations.
 
-### Use 3 body types, mapped from the 7 health levels
+### The 7 bodies map 1:1 to health level
 
-| Body type | Suffix | Health levels that use it | Silhouette |
+The character compositor picks the body by the player's `healthLevel` **index
+(0–6)**, so that index **is** the file suffix.
+
+| Level | Name | Suffix | Silhouette |
 |---|---|---|---|
-| **Heavy** (unhealthiest) | `_heavy` | Withered, Ailing | round torso, wide belly & hips |
-| **Average** | `_avg` | Weary, Balanced, Vital | straight, neutral build |
-| **Fit** (healthiest) | `_fit` | Thriving, Radiant | trim waist, broader shoulders, defined |
+| 0 | Withered\* | `_0` | most **obese** — widest belly & hips, round torso |
+| 1 | Ailing | `_1` | very heavy |
+| 2 | Weary | `_2` | heavy / soft |
+| 3 | Balanced | `_3` | neutral, straight build (the starting body) |
+| 4 | Vital | `_4` | lean, waist starting to define |
+| 5 | Thriving | `_5` | fit, broader shoulders, trim waist |
+| 6 | Radiant | `_6` | **very fit** — athletic, defined, broadest shoulders |
 
-(You *can* add a 4th "chubby" tier later — but every tier multiplies your
-clothing art, so start with 3. See the cost note below.)
+\* Heads-up: "Withered" reads as *frail/thin*, but body `_0` is drawn **obese**
+per the design. If that clashes, rename the level (e.g. "Sluggish") rather than
+the art — the suffix is the numeric index, so level *names* can change freely
+without touching filenames.
 
-### The rule that makes it feasible
+### The rule that keeps 7 bodies affordable
 
 **Only the body between the shoulder line and the ankle line changes. The head
-box and the feet stay identical.** So:
+box and the feet stay identical across all 7.** So:
 
-- **Vary by body type (draw 3× each):** `base` (body), `top`, `bottom`.
-- **Draw once (body-type-independent):** `hair`, `face`, `hat`, `accessory`,
-  `shoes`, `pet` — they attach to the fixed head box or feet.
+- **Vary by body (7× each):** `base` (body), `top`, `bottom`.
+- **Draw once, fits all 7:** `hair`, `face`, `hat`, `accessory`, `shoes`, `pet`
+  — they attach to the fixed head box or feet.
 
-Silhouette guidance at 64px (widths are the *widest* point of the torso):
+Silhouette progression at 64px — only the torso/belly/hip **width** changes;
+shoulders gently broaden toward fit; head (`x22–42`) and feet (`y64`) never move:
 
 ```
-   HEAVY (_heavy)        AVERAGE (_avg)        FIT (_fit)
-   head 22–42            head 22–42            head 22–42     ← identical
-   shoulders x18–46      shoulders x20–44      shoulders x17–47 (broader)
-   BELLY   x14–50 ●      waist    x22–42       waist    x24–40 (trim)
-   hips    x16–48        hips     x22–42       hips     x23–41
-   feet at y64           feet at y64           feet at y64     ← identical
+        _0 obese        _3 balanced        _6 very fit
+ head    x22–42          x22–42             x22–42        ← identical
+ should. x18–46          x20–44             x16–48 (broad)
+ chest   x15–49          x22–42             x20–44
+ BELLY   x12–52 ●●       x23–41             x24–40 (flat)
+ hips    x14–50          x23–41             x23–41
+ feet    y64             y64                y64           ← identical
 ```
 
-Heavy = the torso bulges outward around the belly (widest ~y32). Fit = shoulders
-widen and the waist tucks in. Keep the **outline colour and skin ramp identical**
-across the three — only the *outline shape* differs.
+Bodies `_1`,`_2` interpolate between `_0` and `_3`; `_4`,`_5` between `_3` and
+`_6`. Keep the **outline colour and skin ramp identical** across all seven — only
+the *outline shape* moves. Author `_0`, `_3`, `_6` first (the anchors), then fill
+`_1 _2 _4 _5` by nudging edges.
 
 ### Naming contract (art ↔ code)
 
-For the three body-varying slots, append the body suffix:
+Body-varying slots append the level index `_0`…`_6`:
 
 ```
-assets/character/base/base_medium_heavy.png
-assets/character/base/base_medium_avg.png
-assets/character/base/base_medium_fit.png
-assets/character/tops/top_hoodie_heavy.png
-assets/character/tops/top_hoodie_avg.png
-assets/character/tops/top_hoodie_fit.png
-assets/character/bottoms/bottom_jeans_{heavy,avg,fit}.png
+assets/character/base/base_medium_0.png … base_medium_6.png   (× each skin tone)
+assets/character/tops/top_hoodie_0.png  … top_hoodie_6.png
+assets/character/bottoms/bottom_jeans_0.png … bottom_jeans_6.png
 ```
 
 Body-independent slots keep the plain id (no suffix):
@@ -166,24 +176,25 @@ assets/character/hats/hat_cap.png
 assets/character/face/face_smile.png
 ```
 
-> **Code note:** the app does **not** yet pick the body-type variant by health —
-> today it loads `assets/<slot>/<id>.png` flat. Adding the `_heavy/_avg/_fit`
-> selection is a small change to the character compositor (choose the suffix from
-> the current `healthLevel`), with a fallback to the plain file when a variant is
-> missing. I can wire that when you're ready — the art naming above is the
-> contract it will follow.
+> **Code note:** the app does **not** yet pick the body by health — today it loads
+> `assets/<slot>/<id>.png` flat. Adding the `_$healthLevel` selection is a small
+> change to the compositor (append the index for base/top/bottom, fall back to the
+> plain file when a variant is missing). I can wire it when you're ready — this
+> naming is the contract it will follow.
 
 ### Cost, plainly
 
-Every body type multiplies your torso/leg clothing. With 3 body types:
-- A top or bottom = **3 sprites** instead of 1.
-- A skin tone = **3 base sprites** (one per body type), but still one *drawing*
-  recoloured (§3), so 5 tones × 3 bodies = 15 base files from 3 drawings.
-- Hair/face/hats/shoes/accessories/pets = **unchanged** (1 each).
+Seven bodies multiplies your torso/leg clothing by 7:
+- A top or bottom = **7 sprites** each.
+- A skin tone = **7 base shapes**, but still one *drawing* per body recoloured
+  (§3): so 5 tones × 7 bodies = **35 base files from 7 drawings**.
+- Hair / face / hats / shoes / accessories / pets = **unchanged** (1 each).
 
-If that clothing count is too high, options: fewer body types (2 — heavy/fit), or
-fewer body-varying garments (e.g. all "tops" share a couple of silhouettes).
-Decide this **before** commissioning, because it sets the whole budget.
+This is a real commitment — the clothing count is the driver. To keep it sane:
+keep the number of **body-varying garments** small (a handful of tops/bottoms,
+each in 7), and lean on hats/hair/accessories (drawn once) for variety. The
+smooth-progression trick (anchors + interpolate) is what makes 7 bodies × a
+garment closer to "2 real drawings + 5 tweaks" than 7 from scratch.
 
 ---
 
@@ -235,16 +246,20 @@ Workflow for "N styles × M colours":
 
 Prioritised so the game looks real fast, cheapest first:
 
-1. **3 base bodies** (`_heavy/_avg/_fit`) in the `base_medium` tone — proves the
-   health-morph mechanic with one skin tone.
-2. Recolour those to the other **4 skin tones** (palette swap, §3).
-3. **1 face** (`face_smile`) — fits every body.
-4. **2–3 hair styles**, each in **3–4 colours** (§5).
-5. **1 top + 1 bottom**, each in the **3 body types** — proves clothing-per-body.
-6. **1 pair of shoes**, **1 hat** — body-independent, one each.
+1. **3 anchor bodies** — `_0` (obese), `_3` (balanced), `_6` (very fit) — in the
+   `base_medium` tone. This alone proves the morph at its extremes.
+2. **Fill the in-between bodies** `_1 _2 _4 _5` by nudging edges between the
+   anchors (§4).
+3. Recolour all 7 to the other **4 skin tones** (palette swap, §3).
+4. **1 face** (`face_smile`) — fits every body.
+5. **2–3 hair styles**, each in **3–4 colours** (§5).
+6. **1 top + 1 bottom**, each in all **7 bodies** (author `_0/_3/_6`, interpolate
+   the rest) — proves clothing-per-body.
+7. **1 pair of shoes**, **1 hat** — body-independent, one each.
 
-That set (≈ a dozen real drawings, recoloured out to ~40 files) gives a fully
-dressable character that visibly gets fitter as you walk — the core promise.
+That gives a fully dressable character that visibly morphs obese→fit as you walk
+— the core promise. The base + one outfit is the bulk of the work; everything
+head-and-feet is drawn once.
 
 ---
 
@@ -254,6 +269,6 @@ dressable character that visibly gets fitter as you walk — the core promise.
 - [ ] Head box `x22–42 y4–24`, feet on ground line `y64`, centre `x32`.
 - [ ] Light source top-left; shadows bottom-right.
 - [ ] Skin = 3 shades + outline from the ramp; hair = 3 shades + outline.
-- [ ] Body-varying slot (base/top/bottom)? Delivered as `_heavy`, `_avg`, `_fit`.
+- [ ] Body-varying slot (base/top/bottom)? Delivered as `_0`…`_6` (7 bodies).
 - [ ] Body-independent slot (hair/face/hat/accessory/shoes/pet)? Single file.
 - [ ] File name matches the catalog `id`. GUIDE layer removed.
