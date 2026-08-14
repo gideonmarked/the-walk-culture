@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,12 +9,16 @@ import '../../core/social.dart';
 import '../../services/cloud/cloud_sync_service.dart';
 import '../../services/cloud/social_service.dart';
 import '../../state/app_providers.dart';
+import 'account_code_card.dart';
 
 /// Friends & Groups. Your account code and the group-cost preview work offline;
 /// the friend graph and group membership need the backend (and a second
 /// account) to do anything — shown as an "offline" banner until then.
 class SocialScreen extends ConsumerStatefulWidget {
-  const SocialScreen({super.key});
+  const SocialScreen({super.key, this.initialIndex = 0});
+
+  /// 0 = Friends tab, 1 = Groups tab (so callers can deep-link to Groups).
+  final int initialIndex;
 
   @override
   ConsumerState<SocialScreen> createState() => _SocialScreenState();
@@ -22,27 +28,51 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
   final _fmt = NumberFormat.decimalPattern();
 
   List<SocialUser> _friends = const [];
+  List<SocialUser> _incoming = const [];
   List<Group> _groups = const [];
   bool _loading = false;
+  Timer? _poll;
 
   @override
   void initState() {
     super.initState();
     _refresh();
+    // Keep the friend/request lists live while this screen is open, so an
+    // incoming request appears within a few seconds without a manual refresh.
+    _poll = Timer.periodic(
+        const Duration(seconds: 8), (_) => _refresh(silent: true));
   }
 
-  Future<void> _refresh() async {
+  @override
+  void dispose() {
+    _poll?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _refresh({bool silent = false}) async {
     if (!ref.read(cloudSyncProvider).isReady) return;
-    setState(() => _loading = true);
+    if (!silent) setState(() => _loading = true);
     final social = ref.read(socialServiceProvider);
     final f = await social.friends();
+    final incoming = await social.incomingRequests();
     final g = await social.myGroups();
     if (!mounted) return;
     setState(() {
       _friends = f;
+      _incoming = incoming;
       _groups = g;
       _loading = false;
     });
+  }
+
+  Future<void> _acceptFriend(SocialUser u) async {
+    final err = await ref.read(socialServiceProvider).acceptFriend(u.id);
+    _toast(err ?? 'You’re now friends with ${u.display}');
+    if (err == null) {
+      // Don't let the background poller re-announce the friend I just accepted.
+      await ref.read(playerControllerProvider.notifier).noteFriendAccepted(u.id);
+      _refresh(silent: true);
+    }
   }
 
   void _toast(String m) {
@@ -59,6 +89,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
 
     return DefaultTabController(
       length: 2,
+      initialIndex: widget.initialIndex,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Friends & Groups'),
@@ -69,14 +100,14 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
         ),
         body: Column(
           children: [
-            _AccountCodeCard(
+            AccountCodeCard(
               username: player.username,
               accountCode: player.accountCode,
               onCopy: () {
                 Clipboard.setData(ClipboardData(text: player.accountCode));
                 _toast('Code copied');
               },
-              onEditName: () => _editUsername(player.username),
+              onEditName: () => showUsernameEditor(context, ref),
             ),
             if (!online) const _OfflineBanner(),
             Expanded(
@@ -84,9 +115,11 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                 children: [
                   _FriendsTab(
                     friends: _friends,
+                    incoming: _incoming,
                     online: online,
                     loading: _loading,
                     onAdd: _addFriend,
+                    onAccept: _acceptFriend,
                   ),
                   _GroupsTab(
                     groups: _groups,
@@ -105,34 +138,6 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _editUsername(String current) async {
-    final ctrl = TextEditingController(text: current);
-    final name = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Choose a username'),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          maxLength: 20,
-          decoration: const InputDecoration(hintText: 'e.g. StrollKing'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(
-              onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-              child: const Text('Save')),
-        ],
-      ),
-    );
-    if (name == null || name.isEmpty) return;
-    await ref.read(playerControllerProvider.notifier).setUsername(name);
-    final p = ref.read(playerControllerProvider);
-    await ref.read(socialServiceProvider)
-        .upsertProfile(username: p.username, accountCode: p.accountCode);
-    _toast('Username set to $name');
   }
 
   Future<void> _addFriend() async {
@@ -234,60 +239,6 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
   }
 }
 
-class _AccountCodeCard extends StatelessWidget {
-  const _AccountCodeCard(
-      {required this.username,
-      required this.accountCode,
-      required this.onCopy,
-      required this.onEditName});
-  final String username;
-  final String accountCode;
-  final VoidCallback onCopy;
-  final VoidCallback onEditName;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.all(12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(username.isEmpty ? 'No username yet' : username,
-                          style: Theme.of(context).textTheme.titleMedium),
-                      IconButton(
-                        visualDensity: VisualDensity.compact,
-                        onPressed: onEditName,
-                        icon: const Icon(Icons.edit, size: 18),
-                      ),
-                    ],
-                  ),
-                  Text('Your code', style: Theme.of(context).textTheme.bodySmall),
-                  SelectableText(
-                    accountCode.isEmpty ? '…' : accountCode,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          letterSpacing: 3,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
-                  ),
-                ],
-              ),
-            ),
-            IconButton.filledTonal(
-                onPressed: onCopy, icon: const Icon(Icons.copy)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _OfflineBanner extends StatelessWidget {
   const _OfflineBanner();
   @override
@@ -310,21 +261,26 @@ class _OfflineBanner extends StatelessWidget {
 class _FriendsTab extends StatelessWidget {
   const _FriendsTab(
       {required this.friends,
+      required this.incoming,
       required this.online,
       required this.loading,
-      required this.onAdd});
+      required this.onAdd,
+      required this.onAccept});
   final List<SocialUser> friends;
+  final List<SocialUser> incoming;
   final bool online;
   final bool loading;
   final VoidCallback onAdd;
+  final void Function(SocialUser) onAccept;
 
   @override
   Widget build(BuildContext context) {
+    final empty = friends.isEmpty && incoming.isEmpty;
     return Stack(
       children: [
         if (loading)
           const LinearProgressIndicator()
-        else if (friends.isEmpty)
+        else if (empty)
           _Empty(
             icon: Icons.people_outline,
             text: online
@@ -335,6 +291,25 @@ class _FriendsTab extends StatelessWidget {
           ListView(
             padding: const EdgeInsets.only(bottom: 88),
             children: [
+              if (incoming.isNotEmpty) ...[
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: Text('Requests',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                ),
+                for (final r in incoming)
+                  ListTile(
+                    leading:
+                        CircleAvatar(child: Text(r.display.characters.first)),
+                    title: Text(r.display),
+                    subtitle: const Text('Wants to be friends'),
+                    trailing: FilledButton(
+                      onPressed: () => onAccept(r),
+                      child: const Text('Accept'),
+                    ),
+                  ),
+                const Divider(),
+              ],
               for (final f in friends)
                 ListTile(
                   leading: CircleAvatar(child: Text(f.display.characters.first)),

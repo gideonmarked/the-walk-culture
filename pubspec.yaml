@@ -29,6 +29,7 @@ dependencies:
   intl: ^0.19.0
   in_app_purchase: ^3.3.0
   google_mobile_ads: ^9.0.0
+  flutter_local_notifications: ^18.0.1  # in-app inbox alerts → phone tray
 
   # --- Add in later phases (each needs extra native/config setup) ---
   # flame: ^1.18.0             # 2D game layer            (Phase 2+)

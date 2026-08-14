@@ -15,6 +15,9 @@
     <uses-permission android:name="android.permission.health.READ_STEPS"/>
     <!-- Live in-app step ticker via the device pedometer. -->
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
+    <!-- Local notifications (in-app inbox mirrored to the phone tray). Runtime-
+         prompted on Android 13+. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application
         android:label="The Walk Culture"

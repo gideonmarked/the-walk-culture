@@ -151,12 +151,34 @@ cosmetic reward (the practice is the point — rewards never gate the best gear)
 | **Pray for someone** | 2-minute timer | random item, slightly kinder odds |
 | **Prayer walk** | 1,000 steps (prompt every 200) | random item, kinder odds |
 | **Gratitude journal** | name 3 thankful-fors | **always a Common item** |
+| **Prayer requests** | pray for a stranger / send your own | reward **every** prayer, capped 5/day |
 
-**Privacy:** gratitude entries and prayer names are personal religious
-reflection (a GDPR *special category*), so they are stored **on-device only** and
-never uploaded — a test asserts they can't leak into the synced save. Bible
-verses are bundled public-domain **KJV**; live ESV would require a licensed API
-proxied through the backend (never bundled — ESV is copyrighted).
+**Privacy:** gratitude entries and the private prayer names are personal
+religious reflection (a GDPR *special category*), so they are stored
+**on-device only** and never uploaded — a test asserts they can't leak into the
+synced save. Bible verses are bundled public-domain **KJV**; live ESV would
+require a licensed API proxied through the backend (never bundled — ESV is
+copyrighted).
+
+### Prayer requests — the one shared faith feature
+
+A separate, deliberately-consented, **anonymous** wall (needs the backend live):
+
+- **Pray for a request** — a *second* button runs a **server-side randomiser**
+  *only when tapped*, handing you one visible request that isn't yours and that
+  you haven't prayed for. Tapping **I prayed** counts server-side (idempotent)
+  and grants a quiet reward **every time**, capped at
+  `kRewardedRequestPrayersPerDay = 5` a day so it can't be farmed.
+- **Send a request** — shared anonymously after an explicit consent notice,
+  **max `kMaxPrayerRequestsPerWeek = 2` per rolling 7 days** (server-enforced),
+  `≤ 280` chars.
+- **Safety:** the request body is free text, so every card has a **Report**
+  button; a request auto-hides once `kPrayerRequestReportThreshold = 3` distinct
+  people flag it. The author is stored only for rate-limiting and is **never**
+  returned to readers — RLS locks the tables and all access goes through
+  `SECURITY DEFINER` functions (see [`../supabase/prayer_requests.sql`](../supabase/prayer_requests.sql)).
+- This is the explicit-consent exception invariant #3 allows; it never touches
+  the private on-device journal.
 
 ## 11. Monetization
 
@@ -195,7 +217,31 @@ At the first state change after midnight (the "day roll"):
 - **Permanent (never reset):** lifetime steps, spent steps, wallet, inventory,
   best streak, **claimed trophies**, account code, VIP entitlement.
 
-## 14. Design invariants (don't break these)
+## 14. Notifications
+
+An in-app **inbox** (bell + unread badge on Home) mirrored to the phone's
+**notification tray** (`flutter_local_notifications`; Android 13 asks for
+POST_NOTIFICATIONS on first launch). Entries persist locally in their own key
+(`twc_notifications_v1`), never synced, capped at the newest 50. Each event has a
+**stable id** so re-checking the same milestone can't notify twice.
+
+Sources today:
+
+| Kind | Fires when |
+|---|---|
+| Reward | you bank into a new currency tier |
+| Health | yesterday's steps climb or slip your level (once/day) |
+| Devotion | a new day's practices are ready (once/day) |
+| Social | someone prays for one of **your** shared requests |
+
+The social one is server-backed: on open the app reads the total prayers across
+your own requests (`my_requests_pray_total`) and notifies on any increase since
+last seen (first sight baselines silently). It's a no-op offline and lights up
+once Supabase is live. Remote push while the app is fully closed (FCM) is a
+later phase. A dev-only "send test notification" action lives in the inbox when
+`kDevToolsEnabled`.
+
+## 15. Design invariants (don't break these)
 
 1. **Money/ads buy cosmetics, never health.** Purchased/ad steps go to spendable
    currency only, never to `todaySteps` or the health ladder.
@@ -204,7 +250,9 @@ At the first state change after midnight (the "day roll"):
    entitlements. (Wallet-from-steps is not yet server-authoritative — the open
    anti-cheat milestone.)
 3. **Reflections stay on the device.** Never sync gratitude/prayer content
-   without separate explicit consent.
+   without separate explicit consent. The **one** consented exception is the
+   anonymous prayer-request wall (§10): opt-in per request, no author ever
+   exposed, never drawn from the private journal.
 4. **Published odds.** Any randomised reward shows its drop rates.
 5. **No paid random boxes.** Real-money spheres have guaranteed contents.
 6. **Devotion rewards stay gentle.** Spiritual practices never become the fastest

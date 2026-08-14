@@ -4,12 +4,15 @@ import 'package:intl/intl.dart';
 
 import '../../core/dev_flags.dart';
 import '../../state/app_providers.dart';
+import '../../state/notifications.dart';
 import '../../state/premium_providers.dart';
 import '../../widgets/tier_up_dialog.dart';
 import '../achievements/achievements_screen.dart';
 import '../bible/bible_screen.dart';
 import '../gratitude/gratitude_screen.dart';
+import '../notifications/notifications_screen.dart';
 import '../prayer/prayer_screen.dart';
+import '../prayer_requests/prayer_requests_screen.dart';
 import '../prayer_walk/prayer_walk_screen.dart';
 import '../character/character_profile.dart';
 import '../collection/collection_screen.dart';
@@ -43,10 +46,23 @@ class HomeScreen extends ConsumerWidget {
       }
     });
 
+    final unread = ref.watch(unreadCountProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('The Walk Culture'),
         actions: [
+          IconButton(
+            tooltip: 'Notifications',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+            ),
+            icon: Badge(
+              isLabelVisible: unread > 0,
+              label: Text('$unread'),
+              child: const Icon(Icons.notifications_none),
+            ),
+          ),
           IconButton(
             tooltip: isVip ? 'Store · VIP active' : 'Store',
             onPressed: () => Navigator.of(context).push(
@@ -91,7 +107,7 @@ class HomeScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Center(child: CharacterProfile(size: 200)),
+              const Center(child: CharacterProfile(size: 288)), // 96 stage × 3
               const SizedBox(height: 16),
               Card(
                 child: Padding(
@@ -208,6 +224,15 @@ class HomeScreen extends ConsumerWidget {
                 label: Text(gratitudeReady
                     ? 'Gratitude journal'
                     : 'Gratitude journal (reward claimed)'),
+              ),
+              const SizedBox(height: 8),
+              FilledButton.tonalIcon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                      builder: (_) => const PrayerRequestsScreen()),
+                ),
+                icon: const Icon(Icons.groups_2_outlined),
+                label: const Text('Prayer requests'),
               ),
             ],
           ),

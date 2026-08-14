@@ -13,16 +13,21 @@ import '../core/bible.dart';
 import '../core/currency.dart';
 import '../core/health.dart';
 import '../core/prayer.dart';
+import '../core/prayer_requests.dart';
 import '../core/premium.dart';
 import '../core/quests.dart';
 import '../core/social.dart';
 import '../core/spheres.dart';
+import '../core/notifications.dart';
 import '../core/streaks.dart';
 import '../data/shop_catalog.dart';
 import '../models/player_state.dart';
 import '../models/shop_item.dart';
 import '../services/cloud/cloud_sync_service.dart';
+import '../services/cloud/prayer_request_service.dart';
+import '../services/cloud/social_service.dart';
 import '../services/health_service.dart';
+import 'notifications.dart';
 import 'premium_providers.dart';
 
 /// Set false in tests to keep timers, health polling, and the pedometer inert.
@@ -164,6 +169,7 @@ class PlayerController extends StateNotifier<PlayerState> {
   static const _dateKey = 'stepquest_lastsync_date_v1';
   String _lastSyncDate = '';
   Timer? _autoSync;
+  Timer? _socialPoll;
   bool _syncing = false;
 
   /// Poll the health store on an interval while the app is open, so steps tick
@@ -183,6 +189,7 @@ class PlayerController extends StateNotifier<PlayerState> {
   @override
   void dispose() {
     _autoSync?.cancel();
+    _socialPoll?.cancel();
     _cloudDebounce?.cancel();
     super.dispose();
   }
@@ -217,7 +224,101 @@ class PlayerController extends StateNotifier<PlayerState> {
     }
     startAutoSync(); // then keep it fresh every few seconds while open
     await _maybeGrantVipStipend(); // credit the day's VIP stipend, if owed
+    // Publish our code (+ username, if any) so friends can find us by code even
+    // when we've never set a username. Best-effort; a no-op offline.
+    unawaited(_ref.read(socialServiceProvider).upsertProfile(
+        username: state.username, accountCode: state.accountCode));
+    _startSocialPolling(); // friend requests / accepts / prayers → notifications
   }
+
+  static const _reqSeenKey = 'twc_friend_reqs_seen_v1';
+  static const _accSeenKey = 'twc_friends_accepted_seen_v1';
+
+  /// Poll the social backend on an interval while the app is open, turning new
+  /// friend requests, accepts, and prayers into notifications. Cheap when
+  /// offline (the service short-circuits to empty without a network call).
+  void _startSocialPolling() {
+    if (!kEnableBackgroundServices) return;
+    _socialPoll?.cancel();
+    _checkSocial(); // once now
+    _socialPoll =
+        Timer.periodic(const Duration(seconds: 20), (_) => _checkSocial());
+  }
+
+  Future<void> _checkSocial() async {
+    await _checkFriendNotifications();
+    await _maybeCheckPrayerSocial();
+  }
+
+  /// Notify on friend requests that landed on us and requests of ours that were
+  /// accepted. A persisted "seen" set means each is announced exactly once.
+  Future<void> _checkFriendNotifications() async {
+    final social = _ref.read(socialServiceProvider);
+    final incoming = await social.incomingRequests();
+    final friends = await social.friends();
+    if (incoming.isEmpty && friends.isEmpty) return; // offline or nothing yet
+
+    final prefs = await SharedPreferences.getInstance();
+
+    final seenReq = (prefs.getStringList(_reqSeenKey) ?? const <String>[]).toSet();
+    for (final u in incoming) {
+      if (seenReq.add(u.id)) {
+        _notify(NotifKind.social, 'New friend request',
+            '${u.display} wants to be friends. 🤝',
+            id: 'friendreq-${u.id}');
+      }
+    }
+    await prefs.setStringList(_reqSeenKey, seenReq.toList());
+
+    final seenAcc = (prefs.getStringList(_accSeenKey) ?? const <String>[]).toSet();
+    for (final f in friends.where((f) => f.accepted)) {
+      if (seenAcc.add(f.id)) {
+        _notify(NotifKind.social, 'Friend added',
+            '${f.display} is now your friend. 🎉',
+            id: 'friendacc-${f.id}');
+      }
+    }
+    await prefs.setStringList(_accSeenKey, seenAcc.toList());
+  }
+
+  /// Mark a friendship as already-announced — called when *I* tap Accept, so the
+  /// poller doesn't then notify me about the friend I just added myself.
+  Future<void> noteFriendAccepted(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    final seen = (prefs.getStringList(_accSeenKey) ?? const <String>[]).toSet();
+    seen.add(id);
+    await prefs.setStringList(_accSeenKey, seen.toList());
+  }
+
+  static const _praySeenKey = 'twc_pray_total_seen_v1';
+
+  /// Surface a social notification when the total prayers across the player's own
+  /// shared requests has grown since we last looked. The first run baselines
+  /// silently (no notification for prayers that happened before this existed).
+  /// Server-backed, so it's a no-op offline — lights up once Supabase is live.
+  Future<void> _maybeCheckPrayerSocial() async {
+    final svc = _ref.read(prayerRequestServiceProvider);
+    if (!svc.online) return;
+    final total = await svc.myPrayTotal();
+    if (total == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final seen = prefs.getInt(_praySeenKey) ?? total; // baseline on first sight
+    if (total > seen) {
+      final delta = total - seen;
+      _notify(
+        NotifKind.social,
+        'Someone prayed for you',
+        delta == 1
+            ? 'Someone just prayed for your request. 🙏'
+            : '$delta people have prayed for your requests. 🙏',
+        id: 'pray-$total',
+      );
+    }
+    await prefs.setInt(_praySeenKey, total);
+  }
+
+  /// Re-check for new prayers on your requests (e.g. when returning to the app).
+  Future<void> refreshPrayerSocial() => _maybeCheckPrayerSocial();
 
   /// Pay out the once-daily VIP stipend when it's due. Best-effort on launch —
   /// premium state loads async, so a stipend earned right after a mid-session
@@ -248,7 +349,22 @@ class PlayerController extends StateNotifier<PlayerState> {
     if (idx > state.highestTierReached) {
       state = state.copyWith(highestTierReached: idx);
       _ref.read(tierUpProvider.notifier).state = kTierNames[idx];
+      _notify(NotifKind.reward, 'New tier reached',
+          'You banked enough to reach ${kTierNames[idx]}. 🎉',
+          id: 'tier-$idx');
     }
+  }
+
+  /// Drop an entry into the in-app inbox (mirrored to the phone tray). Stable
+  /// [id] dedupes, so re-grading the same milestone won't notify twice.
+  void _notify(NotifKind kind, String title, String body,
+      {required String id}) {
+    _ref.read(notificationsProvider.notifier).add(
+          kind: kind,
+          title: title,
+          body: body,
+          id: id,
+        );
   }
 
   Future<void> _save() async {
@@ -322,6 +438,7 @@ class PlayerController extends StateNotifier<PlayerState> {
     // (a 0-step "yesterday" would otherwise demote them on first launch) and
     // just stamp the day.
     final firstEverDay = state.questDay.isEmpty;
+    final previousLevel = state.healthLevel;
     final gradedLevel = firstEverDay
         ? state.healthLevel
         : applyDailyHealth(state.healthLevel, state.todaySteps);
@@ -336,6 +453,23 @@ class PlayerController extends StateNotifier<PlayerState> {
       openedSpheres: <String>{},
       sphereRewards: <String, String>{},
     );
+
+    // Tell the player how yesterday's walking moved their health, and that a
+    // fresh set of daily practices is waiting. Keyed by day so it fires once.
+    if (!firstEverDay) {
+      if (gradedLevel > previousLevel) {
+        _notify(NotifKind.health, 'You climbed a level',
+            'Yesterday’s steps lifted you to ${kHealthLevels[gradedLevel].name}. Keep it up! ${kHealthLevels[gradedLevel].emoji}',
+            id: 'health-up-$_todayKey');
+      } else if (gradedLevel < previousLevel) {
+        _notify(NotifKind.health, 'You slipped a level',
+            'You’re at ${kHealthLevels[gradedLevel].name} today. A good walk brings you back. ${kHealthLevels[gradedLevel].emoji}',
+            id: 'health-down-$_todayKey');
+      }
+      _notify(NotifKind.devotion, 'A new day of practices',
+          'Today’s Bible verse, prayers, and gratitude are ready. 🙏',
+          id: 'devotions-$_todayKey');
+    }
   }
 
   /// Passive credit (Layer 1): read today's total from the health store and
@@ -487,6 +621,34 @@ class PlayerController extends StateNotifier<PlayerState> {
     if (!gratitudeReadyToday) return null;
     final result = _rollAndGrantReward(const {Rarity.common: 100.0});
     state = state.copyWith(gratitudeClaimedDate: _todayKey);
+    _checkTierUp();
+    await _save();
+    return result;
+  }
+
+  /// How many of today's request-prayer rewards have already been handed out.
+  int get requestPrayersRewardedToday =>
+      state.requestPrayerRewardDate == _todayKey
+          ? state.requestPrayersRewardedToday
+          : 0;
+
+  /// Rewards still available today for praying for a shared request.
+  int get requestPrayerRewardsLeft =>
+      (kRewardedRequestPrayersPerDay - requestPrayersRewardedToday)
+          .clamp(0, kRewardedRequestPrayersPerDay);
+
+  /// Reward for praying for a shared request. Every prayer rewards, but only the
+  /// first [kRewardedRequestPrayersPerDay] each day (anti-farm cap). Returns null
+  /// once the cap is spent — the prayer still "counts" on the server either way.
+  Future<SphereResult?> claimRequestPrayerReward() async {
+    _rollDayIfNeeded();
+    final rewardedToday = requestPrayersRewardedToday;
+    if (rewardedToday >= kRewardedRequestPrayersPerDay) return null;
+    final result = _rollAndGrantReward(kRequestPrayerRewardOdds);
+    state = state.copyWith(
+      requestPrayerRewardDate: _todayKey,
+      requestPrayersRewardedToday: rewardedToday + 1,
+    );
     _checkTierUp();
     await _save();
     return result;
