@@ -24,7 +24,7 @@ class AvatarTab extends ConsumerWidget {
     return ListView(
       children: [
         const SizedBox(height: 16),
-        const Center(child: CharacterProfile(size: 240)),
+        const Center(child: CharacterProfile(size: 288)), // 96 stage × 3
         const SizedBox(height: 12),
         for (final slot in kCharacterSlots)
           if (ownedIn(slot).isNotEmpty)

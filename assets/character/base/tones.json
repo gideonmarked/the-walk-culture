@@ -1,0 +1,63 @@
+{ "frames": {
+   "Assets 0.aseprite": {
+    "frame": { "x": 0, "y": 0, "w": 32, "h": 64 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 0, "w": 32, "h": 64 },
+    "sourceSize": { "w": 64, "h": 64 },
+    "duration": 100
+   },
+   "Assets 1.aseprite": {
+    "frame": { "x": 32, "y": 0, "w": 32, "h": 64 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 0, "w": 32, "h": 64 },
+    "sourceSize": { "w": 64, "h": 64 },
+    "duration": 100
+   },
+   "Assets 2.aseprite": {
+    "frame": { "x": 64, "y": 0, "w": 32, "h": 64 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 0, "w": 32, "h": 64 },
+    "sourceSize": { "w": 64, "h": 64 },
+    "duration": 100
+   },
+   "Assets 3.aseprite": {
+    "frame": { "x": 96, "y": 0, "w": 32, "h": 64 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 0, "w": 32, "h": 64 },
+    "sourceSize": { "w": 64, "h": 64 },
+    "duration": 100
+   },
+   "Assets 4.aseprite": {
+    "frame": { "x": 128, "y": 0, "w": 32, "h": 64 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 0, "w": 32, "h": 64 },
+    "sourceSize": { "w": 64, "h": 64 },
+    "duration": 100
+   }
+ },
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.18.1-x64",
+  "image": "tones.png",
+  "format": "RGBA8888",
+  "size": { "w": 160, "h": 64 },
+  "scale": "1",
+  "frameTags": [
+   { "name": "Medium", "from": 0, "to": 0, "direction": "forward", "color": "#000000ff" },
+   { "name": "Fair", "from": 1, "to": 1, "direction": "forward", "color": "#000000ff" },
+   { "name": "Light", "from": 2, "to": 2, "direction": "forward", "color": "#000000ff" },
+   { "name": "Brown", "from": 3, "to": 3, "direction": "forward", "color": "#000000ff" },
+   { "name": "Dark", "from": 4, "to": 4, "direction": "forward", "color": "#000000ff" }
+  ],
+  "layers": [
+   { "name": "Medium", "opacity": 255, "blendMode": "normal" }
+  ],
+  "slices": [
+  ]
+ }
+}

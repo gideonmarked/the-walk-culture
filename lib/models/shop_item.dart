@@ -18,7 +18,7 @@ extension ItemSlotLabel on ItemSlot {
         ItemSlot.home => 'Home',
       };
 
-  /// Folder under assets/ where this slot's 64x64 sprites live.
+  /// Folder under assets/ where this slot's sprites live.
   String get assetFolder => switch (this) {
         ItemSlot.base => 'character/base',
         ItemSlot.bottom => 'character/bottoms',
@@ -74,25 +74,47 @@ bool walletTierReached(String tier, int spendableSteps) {
 bool rarityTierUnlocked(Rarity rarity, int spendableSteps) =>
     walletTierReached(kRarityTier[rarity]!, spendableSteps);
 
-/// Logical pixel-art canvas size. All character sprites are authored at this
-/// size (64x64) and composited on a [kCanvas]x[kCanvas] grid. Item [x]/[y] are
-/// top-left offsets in this space — placement is fixed (items don't move once
-/// bought/placed).
+/// The **character sheet**: 64x64 — the size the base art is authored at (see
+/// `assets/character/base/tones.json`, `sourceSize` 64x64). The base body and
+/// everything worn on it (tops, hair, hats, shoes…) uses this size and stacks
+/// paper-doll style, so every layer shares one skeleton.
 const double kCanvas = 64;
 
-/// A cosmetic. Price is {tier, amount} (doc §7/§8). [x]/[y] fix its position on
-/// the character/home canvas; [emoji] is only a fallback until real art is
-/// dropped into [asset].
+/// The **stage**: the wider scene the character stands in. Props that aren't
+/// *on* the body — a pet trotting alongside, a bag dropped on the floor, wings
+/// — are authored at this size so they have room beside the figure.
+const double kStage = 96;
+
+/// Top-left of the 64x64 character box inside the stage. Centred horizontally,
+/// pushed down so there's headroom above the head for tall hats / flying pets.
+const double kCharOriginX = (kStage - kCanvas) / 2; // 16
+const double kCharOriginY = 24;
+
+/// The floor line in stage coords — the character's feet rest here, and so does
+/// anything standing on the ground next to them. Leaves 8px of floor below.
+const double kGroundY = kCharOriginY + kCanvas; // 88
+
+/// Slots authored on the full [kStage] canvas instead of the character sheet.
+/// A single item can opt in/out with [ShopItem.stageSpace].
+const Set<ItemSlot> kStageSlots = {ItemSlot.pet};
+
+/// A cosmetic. Price is {tier, amount} (doc §7/§8). [x]/[y] fix its position —
+/// in stage coords when [onStage], otherwise on the 64px character sheet —
+/// and placement is fixed (items never move once bought). [emoji] is only a
+/// fallback until real art is dropped into [asset].
 class ShopItem {
   final String id;
   final String name;
-  final String emoji; // fallback art until the 64x64 sprite is added
+  final String emoji; // fallback art until the real sprite is added
   final ItemSlot slot;
   final Rarity rarity;
   final String priceTier;
   final int priceAmount;
-  final double x; // fixed top-left position on the 64px canvas
+  final double x; // fixed top-left position in this sprite's own space
   final double y;
+  final double w; // sprite size; 0 = a full frame (64 sheet / 96 stage)
+  final double h;
+  final bool? stageSpace; // override kStageSlots for one item (wings, aura…)
   final bool inShop;
 
   const ShopItem({
@@ -105,11 +127,30 @@ class ShopItem {
     required this.priceAmount,
     this.x = 0,
     this.y = 0,
+    this.w = 0,
+    this.h = 0,
+    this.stageSpace,
     this.inShop = true,
   });
 
-  /// Path to the 64x64 sprite. Replace the file to swap in real art.
+  /// Path to the sprite. Replace the file to swap in real art.
   String get asset => 'assets/${slot.assetFolder}/$id.png';
+
+  /// This sprite is placed in stage space (beside the figure) rather than on
+  /// the 64px character sheet (worn on the figure).
+  bool get onStage => stageSpace ?? kStageSlots.contains(slot);
+
+  /// A tight prop authored at its own size instead of a full frame.
+  bool get isTight => w > 0 && h > 0;
+
+  /// Frame size in canvas px: its own [w]/[h] when tight, else the full square.
+  double get frameW => isTight ? w : (onStage ? kStage : kCanvas);
+  double get frameH => isTight ? h : (onStage ? kStage : kCanvas);
+
+  /// Top-left in **stage** coords — character-sheet sprites get offset by the
+  /// character box origin so both spaces composite in one pass.
+  double get stageX => (onStage ? 0 : kCharOriginX) + x;
+  double get stageY => (onStage ? 0 : kCharOriginY) + y;
 
   int get costInSteps => priceInSteps(priceTier, priceAmount);
 

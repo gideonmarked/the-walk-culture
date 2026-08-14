@@ -13,8 +13,15 @@ a beautiful hat that sits 3px too high ruins every character that wears it.
 
 ## 0. The short version
 
-- **Canvas:** 64×64 px, RGBA, transparent background, **no anti-aliasing** (hard
-  pixel edges only).
+- **Two canvases:** the **character sheet is 64×64** (the body and everything
+  *worn* on it), and the **stage is 96×96** — the scene around him, where things
+  that aren't worn live: a pet at his side, a bag on the floor, wings. The 64×64
+  character box sits at `x16, y24` inside the stage; the floor line is `y88`.
+  Both canvases: RGBA, transparent background, **no anti-aliasing** (hard pixel
+  edges only). Full spec in §2.
+- **Anchors come from the art, not from theory.** §2a's coordinates are measured
+  off `assets/character/base/tones.png`; the figure is chibi (head = a third of
+  the body), so use those numbers rather than realistic proportions.
 - **Skin tones & hair colours:** draw the *shape* once, then **swap the palette**
   to make every colour. You are not redrawing — you are recolouring.
 - **Health poses:** the character's **posture** reflects health — **laying down
@@ -33,8 +40,9 @@ a beautiful hat that sits 3px too high ruins every character that wears it.
 - **Use [Aseprite](https://www.aseprite.org/)** (or the free
   [LibreSprite](https://libresprite.github.io/)). It's the pixel-art standard and
   has the two features you'll live in: **palette swapping** and **layers/tags**.
-- New file: **64 × 64 px**, colour mode **RGBA** (you can switch to Indexed for
-  palette work). Background: **transparent**.
+- New file: **64 × 64 px** for anything worn on the body, **96 × 96 px** for
+  stage props (§2). Colour mode **RGBA** (you can switch to Indexed for palette
+  work). Background: **transparent**.
 - View → **Grid**: 1px grid, plus a **Pixel Grid** on. Turn **snapping** on.
 - **One light source, top-left**, for the whole game. Every sprite is lit from
   the upper-left so shadows fall bottom-right. Be consistent or layers will fight.
@@ -45,31 +53,48 @@ a beautiful hat that sits 3px too high ruins every character that wears it.
 
 ## 2. Alignment anchors (the most important section)
 
+### 2a. The character sheet — 64×64
+
 Every 64×64 sprite shares the same skeleton so layers stack cleanly. Put these on
 a locked "GUIDE" layer in your template (delete/hide before export). Coordinates
 are (x from left, y from top), origin top-left, y increases downward.
 
+**These numbers are measured from the real base art**
+(`assets/character/base/tones.png`) rather than invented — the figure is chibi,
+so the head is a third of the body and the anchors are nothing like a realistic
+figure's. Match them exactly and every cosmetic will fit.
+
 ```
  y
- 0  ┌───────────────────────────┐  ← top edge
- 4  │        ▓▓▓▓▓▓▓▓▓          │  HEAD top       (hats/hair sit here)
-    │      ▓▓ face box ▓▓        │  head:  x 22–42, y 4–24
-24  │        ▓▓▓▓▓▓▓▓▓          │  ── SHOULDER LINE (y≈24) ──
-    │     ░░░░ torso ░░░░        │  torso: tops live here
-40  │      ░░░░░░░░░░░░          │  ── HIP LINE (y≈40) ──
-    │        ██  ██              │  legs:  bottoms live here
-58  │        ██  ██              │  ── ANKLE LINE (y≈58) ──
-62  │       ████████            │  FEET / shoes   (y 58–64)
-64  └───────────────────────────┘  ← ground line (feet touch here)
-    x0        22   42        64
+ 0  ┌────────────────────────────┐  ← top edge (3px of air)
+ 3  │         ▓▓▓▓▓▓▓▓           │  CROWN          x 27–36  (hats start here)
+    │      ▓▓▓▓ face ▓▓▓▓        │  HEAD  y 3–23   widest x 18–45 at y17–21
+23  │       ▓▓▓▓▓▓▓▓▓▓▓▓         │  ── JAW (y≈23) ──
+27  │            ▒▒              │  NECK  y 24–27  x 27–36  (w10, narrowest)
+28  │        ░░░░░░░░░░          │  ── SHOULDER LINE (y=28) ── tops start here
+    │      ░░░░ torso ░░░░       │  arms/hands reach x 19–44 by y42
+47  │       ░░░░░░░░░░░░         │  ── HIP LINE (y≈47) ── bottoms start here
+48  │          ██  ██            │  LEGS  y 48–56  x 25–38  (w14)
+57  │          ██  ██            │  ── ANKLE LINE (y=57) ── shoes start here
+62  │         ████████           │  FEET  y 57–62  widest x 21–42
+64  └────────────────────────────┘  ← ground line
+    x0      18   27  36  45    64
 ```
 
 **Fixed for the upright poses (`_3`–`_6`) and every cosmetic:**
-- **Head box:** centred, `x 22–42`, `y 4–24`. Faces and hair are drawn to this box.
-- **Shoulder line:** `y ≈ 24`. Tops start here.
-- **Hip line:** `y ≈ 40`. Bottoms start here.
-- **Ankle line:** `y ≈ 58`, **ground line `y = 64`**. Feet always touch the bottom.
-- **Centre line:** `x = 32`. The figure is symmetric around it.
+- **Head:** `y 3–23`, widening from `x 27–36` at the crown to `x 18–45` by `y17`.
+  Faces and hair are drawn to this box. It is **as wide as the whole body** —
+  don't draw a small realistic head.
+- **Neck:** `y 24–27`, only **10px wide** (`x 27–36`). The pinch point.
+- **Shoulder line:** `y = 28`. Tops start here.
+- **Hip line:** `y ≈ 47`. Bottoms start here; legs begin at `y48`.
+- **Ankle line:** `y = 57`. Shoes occupy `y 57–62`.
+- **Ground line:** the art's lowest row is `y62`, so there is **1px of air below
+  the feet** — keep new sprites consistent with that rather than pushing to
+  `y63`.
+- **Centre line:** `x = 32` (the figure spans `x 18–45`, symmetric about the
+  edge between columns 31 and 32).
+- **Overall figure:** 28 px wide × 60 px tall inside the 64×64 frame.
 
 These anchors hold for the **upright walking poses** (health levels 3–6), where
 cosmetics layer on top. The **downed poses** (laying/crawling/hunched, levels
@@ -78,34 +103,111 @@ free-form full-body sprites with no cosmetic layering (see §4). Because the
 upright anchor is shared, **hats, hair, faces, glasses, shoes, and clothing are
 drawn once and fit every upright level.**
 
+### 2b. The stage — 96×96 (the room he stands in)
+
+64×64 is exactly the character and nothing else, so there is nowhere to put a
+dog, a satchel on the floor, or a pair of wings. Those live on the **stage**: a
+**96 × 96** canvas with the character sheet dropped into the middle of it.
+
+```
+ stage y
+  0  ┌───────────────────────────────────┐  ← stage top (96 × 96)
+     │        headroom  24px             │   tall hats · halos · flying pets
+ 24  │  ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐        │  ── CHARACTER BOX top ──
+     │  │   ▓▓▓▓▓▓▓▓             │        │   the 64×64 sheet from §2a,
+     │  │   character            │        │   pasted at x16, y24
+     │  │      ██  ██            │        │   free floor: x0–34 and x62–96
+ 88  │  └ ─ ─ ─██──██─ ─ ─ ─ ─ ┘        │  ── GROUND LINE (y88) ──
+ 96  └───────────────────────────────────┘  ← 8px floor strip (shadows)
+     x0    16       32      80        96
+```
+
+- **Stage canvas:** `96 × 96`, same rules (RGBA, transparent, no AA).
+- **Character box:** `x 16–80`, `y 24–88`. Add `+16, +24` to any §2a coordinate
+  to get its stage coordinate (the crown becomes `x 43–52`, `y 27`).
+- **Ground line: `y = 88`.** The character's feet rest here and so does anything
+  standing next to him. A prop `h` px tall sits at `y = 88 − h`.
+- **Floor strip:** `y 88–96`. Contact shadows, puddles, a mat under the bag.
+- **Headroom:** `y 0–24`. Tall hats, a halo, a bird or dragon in the air.
+- **Free floor:** the *figure* only fills `x 34–61` of the stage, so you have
+  **34 px of clear ground on each side** — plenty for a sitting dog (~22×18), a
+  satchel (~14×12) or a water bowl.
+
+**Two ways to author a stage sprite:**
+
+1. **Full 96×96 frame** — draw the prop where it belongs in the frame and leave
+   `x`/`y` at `0`. Simplest; the art positions itself.
+2. **Tight sprite + coords** (**recommended for pets and props**) — export just
+   the prop at its own size and set `x`/`y`/`w`/`h` in the catalog, e.g. a 22×18
+   dog on the right of the ground line:
+   ```dart
+   ShopItem(id: 'pet_dog', …, slot: ItemSlot.pet, x: 66, y: 70, w: 22, h: 18),
+   ```
+   `y 70 = 88 − 18`, so it stands on the floor. This keeps the file small and —
+   because the **shop thumbnail shows the raw PNG** — a tight sprite fills its
+   thumbnail instead of being a dog lost in a mostly-empty 96px square.
+
+**Stage props draw in front of the character** (pet is the last layer), and
+because they don't hang off the body skeleton they are **visible at every health
+level, including the downed poses** — your dog stays with you when you're on the
+floor. That's the one exception to "cosmetics only show when upright" (§4).
+
+> **Which canvas?** Worn on the body (base, face, hair, hat, top, bottom, shoes,
+> glasses) → **64×64 sheet**. Stands beside/around him (pets, floor props, wings,
+> auras) → **96×96 stage**. In code this is `kStageSlots` in
+> [`lib/models/shop_item.dart`](../lib/models/shop_item.dart), with a per-item
+> `stageSpace:` override for the odd accessory (wings) that needs the room.
+
 ---
 
 ## 3. Skin tones — draw once, recolour many
 
-Do **not** redraw the body for each skin tone. Draw the body **once** in a
-neutral mid-tone, using a **4-step ramp** (outline + 3 skin shades), then swap the
-ramp to get every tone. In Aseprite: keep the 4 skin colours together in the
-palette, then **Sprite → Color Mode → Indexed** and edit the palette, or use
-**Edit → Replace Color**.
+Do **not** redraw the body for each skin tone. Draw the body **once**, then swap
+the palette to get every tone — one Aseprite file, one frame per tone, each
+frame **tagged with the tone name**.
 
-Each tone is a ramp of **outline / shadow / mid / highlight**. Starter palette
-(hex — tune to taste, keep the same 4 *slots* so swapping is mechanical):
+### The pipeline (this is what `tones.aseprite` already does)
+
+1. Draw the body once (per pose, §4) using a **small, fixed set of skin slots**:
+   outline + shadow + mid (+ an optional highlight pixel).
+2. Add a frame per tone and palette-swap the skin slots. **Tag each frame** with
+   the tone name — `Medium`, `Fair`, `Light`, …
+3. Export **File → Export Sprite Sheet** with *JSON Data* on (Hash or Array,
+   either works) → `assets/character/base/tones.png` + `tones.json`.
+4. Slice the sheet into the per-id PNGs the app loads:
+   ```
+   python3 tool/slice_aseprite_sheet.py \
+       assets/character/base/tones.png assets/character/base/tones.json \
+       --prefix base_
+   ```
+   Tag `Medium` → `base_medium.png`, and so on — lowercased and prefixed, which
+   is exactly the catalogue id. The slicer re-inflates each trimmed frame back
+   onto the full `sourceSize` canvas, so **alignment survives trimming**. Re-run
+   it after every export; it's the only manual step.
+
+### The ramps actually in use
+
+Measured from `tones.png` — use these, not invented values, so new tones sit in
+the same family:
 
 | Tone (id) | Outline | Shadow | Mid | Highlight |
 |---|---|---|---|---|
-| `base_light`  | `#3b2a25` | `#e8b89a` | `#f5cfb0` | `#ffe0c4` |
-| `base_fair`   | `#3b2a25` | `#e0a878` | `#f0c090` | `#ffd8a8` |
-| `base_medium` | `#33241c` | `#b57a52` | `#cd9366` | `#e0aa7e` |
-| `base_brown`  | `#2a1c12` | `#7a4a2b` | `#955e38` | `#b0764a` |
-| `base_dark`   | `#1f140d` | `#4a2e1e` | `#5e3b28` | `#78503a` |
+| `base_light`  | `#000001` | `#bda08c` | `#e0cdc0` | `#f8edf2` |
+| `base_fair`   | `#000001` | `#bd8665` | `#d79f7d` | `#f6d39f` |
+| `base_medium` | `#000001` | `#774b31` | `#c5835b` | — |
+| `base_brown`  | *not drawn yet* | | | |
+| `base_dark`   | *not drawn yet* | | | |
 
-**Method:**
-1. Draw the base body (per pose, §4) using exactly those 4 slots.
-2. Duplicate the file, swap the 4 skin colours to the next tone, export.
-3. Result: 5 skin files per pose, but only **one** actual drawing.
+The shared (never-swapped) colours are the outline `#000001` / `#000004`, the
+vest `#dee5eb`, and the shorts `#6d787a` / `#353d46` / `#565a63`.
 
-> Keep skin to those 3 shades + outline. More shades = more work per tone and a
-> muddier look at 64px.
+> **Keep the ramp to 2–3 shades + outline.** `Fair` and `Light` are clean: 2 skin
+> shades each. `Medium` currently carries **23** near-identical skin shades
+> (`#c5835b`, `#c68b60`, `#bf7d53`, `#ba7b52` … all within a few points of each
+> other), which makes it read slightly muddier and turns each future palette swap
+> into a 23-slot mapping instead of a 2-slot one. Flatten it in the `.aseprite`
+> source — Aseprite's *Edit → Replace Color* with a tolerance, or Indexed mode
+> with a 4-colour palette — before drawing `base_brown` and `base_dark`.
 
 ---
 
@@ -153,29 +255,36 @@ per-body clothing):
   palette swap (§3), so 5 tones = **35 files from 7 drawings**. The 3 downed poses
   are genuinely distinct drawings; `_3`–`_6` are one upright body with small
   stance changes.
-- **Clothing / hair / hats / face / shoes / accessories / pets: drawn ONCE**
+- **Clothing / hair / hats / face / shoes / accessories: drawn ONCE**
   (for the upright anchor), shown on levels 3–6. **No per-pose variants** — this
   is the big saving versus the body-shape plan.
-- **Trade-off:** equipped cosmetics don't show while downed (0–2). That's the
-  intended hook — *stand up (get healthy) and your outfit appears.*
+- **Pets and floor props: drawn once on the stage** (§2b) and shown at **every**
+  level. They stand on the ground line, not on the body, so no pose can break
+  them.
+- **Trade-off:** equipped *worn* cosmetics don't show while downed (0–2). That's
+  the intended hook — *stand up (get healthy) and your outfit appears* — while
+  the pet keeps you company on the floor.
 
 ### Naming contract (art ↔ code)
 
 ```
 assets/character/base/base_medium_0.png … base_medium_6.png   (× each skin tone)
-assets/character/tops/top_hoodie.png       (single upright sprite — no suffix)
-assets/character/hair/hair_ponytail.png    (single upright sprite)
-assets/character/hats/hat_cap.png          (single upright sprite)
+assets/character/tops/top_hoodie.png       (64×64 — single upright sprite, no suffix)
+assets/character/hair/hair_ponytail.png    (64×64 — single upright sprite)
+assets/character/hats/hat_cap.png          (64×64 — single upright sprite)
+assets/pets/pet_dog.png                    (stage sprite — tight + x/y/w/h, or 96×96)
 ```
 
-Only the **base** gets the `_0`…`_6` pose suffix. Cosmetics stay single-file and
-render only on the upright levels.
+Only the **base** gets the `_0`…`_6` pose suffix. Worn cosmetics stay single-file
+64×64 and render only on the upright levels; stage sprites (§2b) render always.
 
-> **Code note:** the compositor doesn't do this yet — today it loads
-> `assets/<slot>/<id>.png` flat with one standing body. Wiring it means: pick the
-> base by `_$healthLevel`; for levels 0–2 draw only the base; for 3–6 draw base +
-> equipped cosmetics on the shared anchor; later, animate `_6`. I can build that
-> when you're ready — this is the contract it'll follow.
+> **Code note:** the **stage is live** — the compositor renders on the 96×96
+> canvas, offsets every worn sprite by the character origin, and honours
+> `x`/`y`/`w`/`h` for tight props. **Health poses are not wired yet:** it still
+> loads one standing body per slot. Wiring them means: pick the base by
+> `_$healthLevel`; for levels 0–2 draw only the base (+ stage props); for 3–6
+> draw base + worn cosmetics on the shared anchor; later, animate `_6`. I can
+> build that when you're ready — this is the contract it'll follow.
 
 ### Alternative (expensive)
 
@@ -217,15 +326,17 @@ Workflow for "N styles × M colours":
 
 ## 6. Export settings
 
-- **PNG, 64×64, RGBA, transparent.** No JPEG (kills transparency + adds artifacts).
+- **PNG, RGBA, transparent.** **64×64** for anything worn on the body; for stage
+  props either **96×96** or the sprite's own tight size with `x`/`y`/`w`/`h` set
+  in the catalog (§2b). No JPEG (kills transparency + adds artifacts).
 - **No anti-aliasing / no smoothing.** Hard edges only. In Aseprite this is the
   default pencil; just never use the AA brushes or blur.
 - Hide/delete the GUIDE layer first.
 - File name = the exact `id` (+ body suffix where required). Drop into the folder
   from [`ASSETS.md`](ASSETS.md). Run `flutter pub get` the first time a folder
   gains real files; rebuild.
-- The app upscales ~3× with nearest-neighbor, so **do not** pre-scale — deliver
-  true 64×64. Design *at* 64px; don't shrink a big illustration down.
+- The app upscales 3× with nearest-neighbor (96 → 288), so **do not** pre-scale —
+  deliver true 64×64. Design *at* 64px; don't shrink a big illustration down.
 
 ---
 
@@ -239,8 +350,11 @@ Prioritised so the game looks real fast, cheapest first:
 2. **Fill `_1` crawling, `_4` `_5`** (the remaining poses).
 3. Recolour all 7 to the other **4 skin tones** (palette swap, §3).
 4. **1 face**, **2–3 hair styles** (each in 3–4 colours), **1 top**, **1 bottom**,
-   **1 hat**, **1 shoes** — each a **single upright sprite** (they show on the
-   standing poses 3–6).
+   **1 hat**, **1 shoes** — each a **single upright 64×64 sprite** (they show on
+   the standing poses 3–6).
+5. **1 pet** (e.g. the dog) as a **stage sprite** (§2b) standing on the ground
+   line beside him — the cheapest way to make the scene feel inhabited, and it
+   shows at every health level.
 
 That gives a character that visibly rises from the floor to walking as you get
 healthier, and shows off an outfit once upright — the core promise. The 7 pose
@@ -250,12 +364,18 @@ bases are the bulk of the work; every cosmetic is drawn once.
 
 ## 8. Checklist before you hand off a sprite
 
-- [ ] 64×64, transparent, RGBA, no anti-aliasing.
+- [ ] Right canvas: **64×64** if it's worn on the body, **96×96 stage** (or a
+      tight sprite + `x`/`y`/`w`/`h`) if it stands beside him. Transparent, RGBA,
+      no anti-aliasing.
 - [ ] Light source top-left; shadows bottom-right.
 - [ ] Skin = 3 shades + outline from the ramp; hair = 3 shades + outline.
 - [ ] **Base body?** Delivered as `_0`…`_6` (7 poses). Upright poses `_3`–`_6`
-      use the §2 anchors (head `x22–42 y4–24`, feet `y64`, centre `x32`); downed
+      use the §2 anchors (crown `y3`, shoulders `y28`, ankles `y57`, centre
+      `x32`); downed
       poses `_0`–`_2` are free-form in the frame.
-- [ ] **Cosmetic** (top/bottom/hair/face/hat/accessory/shoes/pet)? A single
-      upright sprite on the §2 anchors — no pose suffix.
+- [ ] **Worn cosmetic** (top/bottom/hair/face/hat/glasses/shoes)? A single
+      upright 64×64 sprite on the §2a anchors — no pose suffix.
+- [ ] **Stage prop** (pet/floor item/wings)? Standing on the ground line
+      (`y88`), clear of the figure's column (`x34–61`), and it reads at every
+      health level — no pose suffix.
 - [ ] File name matches the catalog `id`. GUIDE layer removed.
