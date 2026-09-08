@@ -178,8 +178,8 @@ A separate, deliberately-consented, **anonymous** wall (needs the backend live):
   people flag it. The author is stored only for rate-limiting and is **never**
   returned to readers — RLS locks the tables and all access goes through
   `SECURITY DEFINER` functions (see [`../supabase/prayer_requests.sql`](../supabase/prayer_requests.sql)).
-- This is the explicit-consent exception invariant #3 allows; it never touches
-  the private on-device journal.
+- This is one of the two explicit-consent exceptions invariant #3 allows; it
+  never touches the private on-device journal.
 
 ## 11. Monetization
 
@@ -343,9 +343,13 @@ later phase. A dev-only "send test notification" action lives in the inbox when
    entitlements. (Wallet-from-steps is not yet server-authoritative — the open
    anti-cheat milestone.)
 3. **Reflections stay on the device.** Never sync gratitude/prayer content
-   without separate explicit consent. The **one** consented exception is the
-   anonymous prayer-request wall (§10): opt-in per request, no author ever
-   exposed, never drawn from the private journal.
+   without separate explicit consent. There are **two** consented exceptions,
+   both player-typed, both leaving only on an explicit tap: the anonymous
+   prayer-request wall (§10) — opt-in per request, no author ever exposed — and
+   a **feedback** report (bug or idea, see [`FEATURES.md`](FEATURES.md)), whose
+   auto-attached build/progress context is listed in full before sending and
+   carries no reflection content. Neither is ever drawn from the private
+   journal.
 4. **Published odds.** Any randomised reward shows its drop rates.
 5. **No paid random boxes.** Real-money spheres have guaranteed contents, and
    the Travel Pass is named end to end — no boxes on either column (§12).

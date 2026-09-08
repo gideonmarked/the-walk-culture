@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/app_providers.dart';
+import '../../state/feedback_providers.dart';
 import '../../state/premium_providers.dart';
 import '../home/home_screen.dart';
 import '../pass/travel_pass_screen.dart';
@@ -18,6 +19,16 @@ class RootScaffold extends ConsumerStatefulWidget {
 
 class _RootScaffoldState extends ConsumerState<RootScaffold> {
   int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Touching the provider constructs the feedback outbox, which flushes
+    // anything queued on a previous run. Without this a report written offline
+    // would sit there until the player happened to reopen the feedback screen.
+    ref.read(feedbackControllerProvider);
+  }
+
   static const _pages = [
     HomeScreen(),
     QuestsScreen(),

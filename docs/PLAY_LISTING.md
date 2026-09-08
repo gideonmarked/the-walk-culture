@@ -40,9 +40,12 @@ policy matches the Data Safety form, and a mismatch is a rejection.
 |---|---|---|---|---|
 | **Health & fitness → Health info** (step count) | Yes | No | App functionality | Required* |
 | **App activity → In-app actions** (progress, purchases) | Yes | No | App functionality | Required |
-| **App info & performance → Crash logs** | Only if you add crash reporting | — | — | — |
+| **App info & performance → Crash logs** | **Yes** | No | Diagnostics (crash fixing) | **Yes** — Settings toggle |
+| **App info & performance → Diagnostics** | **Yes** | No | Diagnostics | Yes — same toggle / not sending feedback |
+| **Messages → Other in-app messages** (feedback body, prayer requests) | **Yes** | No | App functionality, customer support | Yes — only what the user types and sends |
+| **Personal info → Email address** | **Yes, optional** | No | Customer support (replying to feedback) | **Yes** — blank by default |
 | **Device or other IDs** (advertising ID) | **Only once AdMob ships** | Yes → Google | Advertising | Yes (optional) |
-| **Personal info** (name, email) | **No** | No | — | — |
+| **Personal info** (name) | **No** | No | — | — |
 | **Location** | **No** | No | — | — |
 | **Financial info** (card details) | **No** — Google Play handles payment | No | — | — |
 
@@ -55,6 +58,21 @@ permission and the app still runs (it just can't count steps).
 
 > **Update this the day AdMob goes live.** Ads add the advertising ID, and
 > shipping ads without declaring it is a policy violation.
+
+> **What the last four rows actually cover.** Crash reports (`supabase/crash.sql`)
+> carry an error message, a trimmed stack, and the same build/progress context
+> the feedback form lists on screen — user-visible and switchable off under
+> **Settings → Diagnostics → Send crash reports**. A feedback report
+> (`supabase/feedback.sql`) carries what the player typed plus that same
+> context, and an email **only** if they filled the optional field. Neither
+> ever carries gratitude or prayer text (design invariant #3).
+>
+> **The prayer-request wall was already sending user-authored text** before
+> either of these landed and is not declared in the table above — that gap
+> predates this change, so the "Other in-app messages" row now covers it too.
+> Confirm the exact category names in the console as you fill the form; Play's
+> taxonomy shifts, and "Other in-app messages" is the closest bucket for
+> text a user writes and sends to the developer rather than to another user.
 
 ---
 

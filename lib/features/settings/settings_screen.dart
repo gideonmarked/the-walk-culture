@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/app_info.dart';
+import '../../core/crash_reporter.dart';
 import '../../core/dev_flags.dart';
 import '../../core/health.dart';
 import '../../data/achievements_catalog.dart';
 import '../../data/shop_catalog.dart';
 import '../../state/app_providers.dart';
+import '../../state/crash_providers.dart';
+import '../../state/feedback_providers.dart';
+import '../feedback/feedback_screen.dart';
 import '../stats/statistics_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -21,6 +26,8 @@ class SettingsScreen extends ConsumerWidget {
 
     final shopItems = kShopCatalog.where((i) => i.inShop).length;
     final trophies = kAchievements.where((a) => a.unlocked(player)).length;
+    final pendingFeedback = ref.watch(pendingFeedbackCountProvider);
+    final crashes = ref.watch(crashControllerProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -50,6 +57,54 @@ class SettingsScreen extends ConsumerWidget {
               'below ${fmt.format(kHoldSteps)} you slip one',
             ),
             isThreeLine: true,
+          ),
+          const Divider(),
+          const _SectionHeader('Diagnostics'),
+          SwitchListTile(
+            secondary: const Icon(Icons.bug_report_outlined),
+            title: const Text('Send crash reports'),
+            subtitle: Text(crashes.enabled
+                ? crashes.pendingCount > 0
+                    ? '${crashes.pendingCount} waiting to send · '
+                        'helps us fix what broke'
+                    : 'Error details only — never your journal or prayers'
+                : 'Off — nothing is recorded or sent'),
+            value: crashes.enabled,
+            onChanged: (on) =>
+                ref.read(crashControllerProvider.notifier).setEnabled(on),
+          ),
+          // Proving the pipeline works is worth a button: throw, then check the
+          // count above ticks up. Compiled out of a public release.
+          if (kDevToolsEnabled)
+            ListTile(
+              leading: const Icon(Icons.science_outlined),
+              title: const Text('Record a test error (dev)'),
+              subtitle: const Text('Files a fake crash to check reporting'),
+              onTap: () {
+                CrashReporter.report(
+                  StateError('Test error from Settings — not a real crash'),
+                  StackTrace.current,
+                );
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(const SnackBar(
+                      content: Text('Test error recorded')));
+              },
+            ),
+          const Divider(),
+          const _SectionHeader('Feedback'),
+          ListTile(
+            leading: const Icon(Icons.feedback_outlined),
+            title: const Text('Report a bug or suggest a feature'),
+            subtitle: Text(pendingFeedback > 0
+                ? '$pendingFeedback waiting to send'
+                : 'Tell us what broke, or what the app should do next'),
+            trailing: pendingFeedback > 0
+                ? Badge(label: Text('$pendingFeedback'))
+                : const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const FeedbackScreen()),
+            ),
           ),
           const Divider(),
           const ListTile(
@@ -85,9 +140,11 @@ class SettingsScreen extends ConsumerWidget {
               },
             ),
           ],
+          // Same constant the feedback form attaches, so About and a bug
+          // report can never disagree about which build this is.
           const AboutListTile(
             applicationName: 'The Walk Culture',
-            applicationVersion: '0.1.0 (Phase 0 prototype)',
+            applicationVersion: kAppVersion,
           ),
         ],
       ),

@@ -45,6 +45,7 @@ lib/
     house/        place home decor in the room
     wallet/       tier balances strip
     settings/     daily goal · privacy · reset (via Home app bar)
+    feedback/     report a bug / suggest a feature — offline-first outbox
 test/                           currency, streak, controller, widget-smoke tests
 platform_config/                native config snippets (merged into android/)
 setup.sh / setup.ps1            one-shot native bootstrap

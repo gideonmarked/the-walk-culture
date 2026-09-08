@@ -35,6 +35,10 @@ flutter test --coverage  # writes coverage/lcov.info
   retro-unlocks, a reward pays once, seasons roll over, and no pass cosmetic
   can reach `kRollableCatalog`. `test/travel_pass_screen_test.dart` covers the
   screen + the nav badge.
+- `test/feedback_test.dart` / `test/crash_test.dart` — the two outboxes: a
+  report is stored before it's sent, an **unsent** one is never evicted to make
+  room, writes wait on the disk load, and a crash that fires every frame
+  collapses into ONE report with a count.
 
 ### Integration test (on a device)
 ```bash
@@ -101,6 +105,45 @@ Fastest route: dev build, simulate 8,000 steps per level.
 30. Change the device date forward past the season end → next state change rolls
     the season: level back to 0, claims cleared, "A new Travel Pass season" in
     the inbox — and items/currency already granted are **still there**.
+
+### G. Feedback outbox (beta, [`FEATURES.md`](FEATURES.md))
+Steps 31–34 work local-only; step 35 needs a build with the Supabase defines
+([`DEPLOY.md`](DEPLOY.md)) so a report can actually land.
+31. Settings → **Report a bug or suggest a feature** → expand **What gets
+    attached** *before* sending. It lists the 11 build/progress values (App
+    version, Platform, OS, Health level, Lifetime Pebbles, Steps today, Streak,
+    Travel Pass, VIP, Health sync, Backend) and **nothing else** — no gratitude
+    entry, no prayer text, no account code, no username, and no email unless
+    you typed one. App version must match `pubspec.yaml`.
+32. **Airplane mode ON** → type a bug → **Send**. The confirmation says
+    **saved** ("It'll send when you're back online"), *not* sent, and the report
+    appears under **Your reports** with the clock marker and "Waiting for a
+    connection".
+33. Force-close and relaunch, still offline → the report is **still listed and
+    still waiting**. It lives in its own `twc_feedback_v1` key, so a cloud
+    restore of the player save neither carries nor clears it.
+34. Back in Settings → the **Feedback** row shows a badge with the pending count
+    and "*n* waiting to send". File a second report → the badge reads **2**.
+35. Airplane mode **off** → relaunch (or just reopen the feedback screen, both
+    retry) → both rows flip to the sent tick and the Settings badge clears.
+    Check the Supabase `feedback` table: **one row per report** — retries dedupe
+    on the client id, so a resend after a timeout must never double-file.
+
+### H. Crash reporting (beta)
+Needs a dev build (`--dart-define=DEV_TOOLS=true`) for the test trigger.
+36. **Settings → Diagnostics** shows **Send crash reports**, on by default.
+37. Tap **Record a test error (dev)** → the subtitle above ticks to
+    "1 waiting to send". Force-close, reopen → still counted (it's on disk).
+38. Tap it **twenty times** → the count stays at **1**. Repeats of one bug
+    collapse into a single report with an occurrence count; this is what stops
+    a per-frame layout error flooding the queue.
+39. With the backend configured, relaunch → the count clears and **one** row
+    appears in `crash_report` with `occurrences` matching your taps.
+40. Turn the toggle **off**, trigger again → nothing is recorded and nothing is
+    queued.
+41. Cause a *real* error (a dev build with a deliberate throw in a `build`
+    method): confirm the red error screen **still appears** and the console
+    still logs it. The handlers must only add recording, never swallow.
 
 ---
 

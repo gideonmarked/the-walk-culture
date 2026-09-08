@@ -266,6 +266,7 @@ Functions** (callable), the tables become Firestore collections, and RLS becomes
 > [`../supabase/schema.sql`](../supabase/schema.sql) with a quickstart in
 > [`../supabase/README.md`](../supabase/README.md) — paste it into the Supabase
 > SQL Editor and it creates everything below.
+> The beta feedback table + RPC are a separate file, run after it — see §10.
 
 1. Create the Supabase project; add the schema + RLS above.
 2. Wire Supabase Auth (guest + Apple + Google) into onboarding.
@@ -279,3 +280,70 @@ Functions** (callable), the tables become Firestore collections, and RLS becomes
 
 > Distance/route tables and the TURBO speed-cap validation stay empty until
 > Phase 4 — define them now (§8) so nothing needs migrating later.
+
+---
+
+## 10. Beta feedback (`supabase/feedback.sql`)
+
+Off the money path, so it isn't part of the rollout order above — run it
+whenever you want the in-app **Send feedback** form
+([`FEATURES.md`](FEATURES.md)) to reach you. Paste
+[`../supabase/feedback.sql`](../supabase/feedback.sql) into the SQL Editor
+**after `schema.sql`**; like
+[`../supabase/prayer_requests.sql`](../supabase/prayer_requests.sql) it needs
+**Authentication → Providers → Anonymous sign-ins: ON**, because the app takes
+an anonymous session and the function keys off `auth.uid()`.
+
+It creates one `feedback` table — kind, body, the optional contact the player
+typed, the `diagnostics` the app disclosed before sending, `app_version`, and a
+`new`/`triaged`/`closed` triage column — plus `submit_feedback()`.
+
+The posture is the prayer-request one: **RLS on with no policies at all**, so no
+client can touch the table directly; `execute` on the `SECURITY DEFINER`
+function is granted to `authenticated` only, and the function owns every rule:
+
+- 1,000-char body cap (mirrors `kFeedbackMaxChars` in `lib/core/feedback.dart`)
+  and the `('bug', 'idea', 'other')` kinds.
+- **10 reports per rolling 24 h** per account. Deliberately generous — a tester
+  having a bad afternoon shouldn't be rate-limited out of telling you.
+- `on conflict (author, client_id) do nothing`, so the app's offline retries are
+  idempotent: a resend of something that actually landed is a no-op and does
+  **not** consume allowance. It returns how many the caller has left.
+
+**Write-only by design** — there is no read path, not even for the author, so
+you work the queue in the dashboard (**Table Editor → `feedback`**, or
+`select created_at, kind, body, contact, app_version, diagnostics from feedback
+where status = 'new' order by created_at desc;` — `feedback_triage_idx` covers
+exactly that). A report can quote a bug or name another player, so returning it
+to any client buys nothing.
+
+## 11. Crash reports (`supabase/crash.sql`)
+
+Run after `schema.sql`. Same posture as §10 — off the money path, needs
+**Anonymous sign-ins ON** (the function keys off `auth.uid()`), RLS on with no
+policies, one SECURITY DEFINER function, **write-only**.
+
+Creates `crash_report` (message, trimmed stack, `library`, `occurrences`,
+`first_seen`/`last_seen`, `diagnostics`, `app_version`, a `status` triage column)
+plus `submit_crash()`.
+
+The one thing that differs from every other table here: **it upserts.** A crash
+that fires every frame is *one* bug, so the client collapses repeats by
+fingerprint into a single report with a count, and re-sends it as that count
+grows. A repeat submission of the same `(author, client_id)` therefore **updates**
+the row — highest `occurrences`, widest time window — rather than inserting.
+Without that, one layout bug in one build would bury the table.
+
+Scope note: this catches **Dart** errors — exceptions, bad state, null derefs,
+layout errors, unhandled async failures. A native crash (a plugin segfaulting,
+an OOM kill) kills the process before Dart runs, and only a native SDK sees
+those. Add one when the Dart reports stop being enough.
+
+Triage in the dashboard, loudest first:
+
+```sql
+select fingerprint, sum(occurrences) as hits, count(distinct author) as users,
+       max(last_seen) as latest, min(app_version) as since
+  from crash_report where status = 'new'
+ group by fingerprint order by users desc, hits desc;
+```
