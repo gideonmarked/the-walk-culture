@@ -203,8 +203,12 @@ review. Health & Fitness is the safer call.*
       users, but **permanent once published**. Change it (e.g.
       `com.perfeos.thewalkculture`) before the first upload if you want it to
       match the name; it also renames the IAP product IDs.
-- [ ] **Real upload keystore** — release currently signs with the *debug* key
-      and Play will reject it. See [`DEPLOY.md`](DEPLOY.md) §4.
+- [ ] **Real upload keystore** — **Gradle is wired** (`key.properties` +
+      `signingConfigs`, verified end to end against a throwaway key). What's
+      left is yours alone: run `keytool`, fill in `android/key.properties`, and
+      **back the `.jks` up**. Until then an APK builds debug-signed for testing
+      and `flutter build appbundle` hard-fails rather than producing something
+      Play would reject. See [`DEPLOY.md`](DEPLOY.md) §4.
 - [ ] **App icon** — still the Flutter default.
 - [ ] **Support email** — required on the listing.
 - [ ] **Account deletion** — Play requires a way to request deletion; the policy
