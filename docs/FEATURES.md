@@ -33,7 +33,9 @@ maps to. Product spec:
 | **Achievements / Trophy Room** — milestones derived live from state (lifetime, streak, collection) | `core/achievements.dart`, `data/achievements_catalog.dart`, `features/achievements/` | §6 |
 | **Companion sphere** — shifts tier (Warm-up→Bronze→…→Mythic) as **today's** steps grow, using the same thresholds as the Mystery Spheres (3k/5k/10k/16k/21k/50k) so tier names are consistent | `core/companion.dart`, `features/home/widgets/companion_card.dart` | §6 |
 | **Earning boost** — activate a **2× Steps** multiplier for 1 hour (applies to credited steps, not `todaySteps`, so goals/quests aren't inflated) | `features/home/widgets/boost_card.dart`, `state/app_providers.dart` (`activateBoost`) | §5.2 |
-| **Collection** — "collect them all" gallery of every cosmetic (owned in colour, locked items greyed), with a completion % — fed by Shop + Spheres | `features/collection/`, Home app bar 🔲 | §6/§7 |
+| **Travel Pass** — seasonal 30-level track, free column + VIP column; 60-day seasons derived from a fixed UTC epoch (never stored); **XP = raw walked steps** (VIP/boost multiply currency, not XP) plus +100/quest, +100/devotion, +50/sphere; every cell a named reward, claim-once, **retro-claims** the whole earned VIP column when you subscribe | `core/travel_pass.dart` (seasons, levels, `kPassTrack`), `data/pass_catalog.dart` (17 exclusives), `features/pass/`, `state/app_providers.dart` (`claimPassReward`/`claimAllPassRewards`/`passClaimableCount`) | §11 Phase 5 |
+| **Pass-exclusive cosmetics** — 5 free-track + 12 VIP-track items that exist nowhere else: `inShop: false`, priced 0, `passExclusive: true`, so `kRollableCatalog` drops them and no sphere or devotion roll can hand one out | `data/pass_catalog.dart`, `models/shop_item.dart` (`passExclusive`), `data/shop_catalog.dart` (`kRollableCatalog`) | §7 |
+| **Collection** — "collect them all" gallery of every cosmetic (owned in colour, locked items greyed), with a completion % — fed by Shop + Spheres + Pass | `features/collection/`, Home app bar 🔲 | §6/§7 |
 | **Settings** — daily-goal picker, privacy note, reset progress | `features/settings/` | — |
 | **Onboarding** — consent-first health opt-in with a Skip path | `features/onboarding/` | §3.6 |
 
@@ -46,7 +48,8 @@ break the "1 real step = 1 Step" promise (doc §2.4 double-count rule).
 
 ## Navigation map
 
-- **Bottom nav:** Home · Quests · Spheres · Shop · Profile
+- **Bottom nav:** Home · Quests · **Pass** · Shop · Profile — the Pass tab carries
+  a badge with the number of unclaimed pass rewards (`passClaimableCount`)
 - **Profile tabs:** Avatar (character customiser) · Home (room decor)
 - **Home app bar:** 🔲 Collection · 🏆 Trophy Room · ⚙️ Settings · 🔄 Sync
 - **Home cards:** avatar · today/lifetime/spendable · daily-goal+streak · pet · wallet
@@ -59,7 +62,7 @@ break the "1 real step = 1 Step" promise (doc §2.4 double-count rule).
 - **Phase 2 (remaining):** seasonal events, richer home/character catalogs, live pedometer tick
 - **Phase 3:** friends, home visits, leaderboards, gifting
 - **Phase 4:** **TURBO** — live GPS session (distance, route, pace), the only GPS release
-- **Phase 5:** guilds/pooling, cosmetic pass, boosts, prestige tiers
+- **Phase 5:** guilds/pooling, prestige tiers *(cosmetic pass + boosts: built)*
 
 The Home screen shows a disabled **TURBO — coming in Phase 4** button as a
 placeholder; no GPS/location code or permissions exist yet, by design.

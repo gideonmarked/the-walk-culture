@@ -20,6 +20,7 @@ import '../core/social.dart';
 import '../core/spheres.dart';
 import '../core/notifications.dart';
 import '../core/streaks.dart';
+import '../core/travel_pass.dart';
 import '../data/shop_catalog.dart';
 import '../models/player_state.dart';
 import '../models/shop_item.dart';
@@ -211,6 +212,10 @@ class PlayerController extends StateNotifier<PlayerState> {
     // progress made before this feature existed.
     state = state.copyWith(
         highestTierReached: highestTierIndex(state.lifetimeSteps));
+    // Stamp/roll the Travel Pass season before anything can award XP into it.
+    // Persist it here: a player who opens the app on rollover day and walks
+    // nowhere gets no other save, and the reset would be lost.
+    if (_rollSeasonIfNeeded()) await _save();
     // Mint a stable share code on first run. Server-assigned + uniqueness-checked
     // once the backend is live; this local code is what the Profile shows until
     // then (and the seed the server adopts on first sync).
@@ -514,6 +519,9 @@ class PlayerController extends StateNotifier<PlayerState> {
       lifetimeSteps: state.lifetimeSteps + gained,
       todaySteps: todayTotal,
     );
+    // Pass XP tracks the steps actually WALKED, not `gained` — VIP/boost
+    // multiply currency, never progress on the track.
+    _addPassXp(delta > 0 ? delta : 0);
     _updateStreak();
     _checkTierUp();
     await _save();
@@ -528,6 +536,7 @@ class PlayerController extends StateNotifier<PlayerState> {
       lifetimeSteps: state.lifetimeSteps + n * _earnMultiplier,
       todaySteps: state.todaySteps + n,
     );
+    _addPassXp(n); // raw steps, unmultiplied
     _updateStreak();
     _checkTierUp();
     await _save();
@@ -542,6 +551,7 @@ class PlayerController extends StateNotifier<PlayerState> {
       lifetimeSteps: state.lifetimeSteps + quest.reward,
       claimedQuests: {...state.claimedQuests, quest.id},
     );
+    _addPassXp(kPassXpPerQuest);
     _checkTierUp();
     await _save();
     return true;
@@ -552,8 +562,11 @@ class PlayerController extends StateNotifier<PlayerState> {
   /// (same fallback as spheres). Mutates [state]; the caller stamps the claim
   /// date and saves. Shared by the Bible and prayer daily rewards.
   SphereResult _rollAndGrantReward(Map<Rarity, double> odds) {
+    // Every daily practice funnels through here, so this is the one place the
+    // devotion pass-XP top-up needs to live.
+    _addPassXp(kPassXpPerDevotion);
     final rarity = rollRarityFromOdds(odds, _rng.nextDouble());
-    final candidates = kShopCatalog
+    final candidates = kRollableCatalog
         .where((i) => i.rarity == rarity && !state.owned.contains(i.id))
         .toList();
     if (candidates.isNotEmpty) {
@@ -691,6 +704,10 @@ class PlayerController extends StateNotifier<PlayerState> {
   /// case, but the rule is enforced here too so it can't be bypassed.
   Future<bool> buy(ShopItem item) async {
     if (state.owned.contains(item.id)) return false;
+    // Reward-only loot (sphere drops, Travel Pass exclusives) is priced 0, so
+    // the tier/price check below would hand it over for nothing. The shop UI
+    // already filters these out; this is the rule, not the decoration.
+    if (!item.inShop) return false;
     if (!item.purchasable(state.spendableSteps)) return false;
     state = state.copyWith(
       spentSteps: state.spentSteps + item.costInSteps,
@@ -718,7 +735,7 @@ class PlayerController extends StateNotifier<PlayerState> {
     if (!sphereReady(tier)) return null;
 
     final rarity = rollSphereRarity(tier, _rng.nextDouble());
-    final candidates = kShopCatalog
+    final candidates = kRollableCatalog
         .where((i) => i.rarity == rarity && !state.owned.contains(i.id))
         .toList();
 
@@ -739,9 +756,181 @@ class PlayerController extends StateNotifier<PlayerState> {
       tier.id: encodeSphereReward(result),
     });
     state = next;
+    _addPassXp(kPassXpPerSphere);
     _checkTierUp(); // a currency bonus may cross into a new tier
     await _save();
     return result;
+  }
+
+  // --- Travel Pass (core/travel_pass.dart) ---
+
+  /// The season the pass is in right now — derived from the clock, never
+  /// stored, so it needs no server to stay in step with everyone else.
+  PassSeason get passSeason => seasonAt(DateTime.now());
+
+  /// Level reached on this season's track, 0..[kPassLevelCount].
+  int get passLevel => passLevelForXp(state.passXp);
+
+  bool get _isVip => _ref.read(premiumControllerProvider).isVip;
+
+  /// Close out a finished season: the track drops back to level 0 and every
+  /// unclaimed reward is gone. The same shape as [_rollDayIfNeeded] — derive
+  /// the current season, compare it to the one the saved progress belongs to,
+  /// and wipe on a mismatch.
+  ///
+  /// Returns true when it actually changed state, so the caller knows there's
+  /// something to persist. Every other caller is mid-change and saves anyway;
+  /// [_init] is the one that would otherwise leave the reset in memory only.
+  bool _rollSeasonIfNeeded() {
+    final season = passSeason;
+    if (state.passSeasonId == season.id) return false;
+
+    // Seasons only ever move FORWARD. A stored season ahead of the derived one
+    // therefore means the clock is wrong, not that time passed — a dead RTC, a
+    // pre-NTP boot, a factory reset, someone winding the date back. Wiping
+    // here would destroy a real season's progress permanently, so sit tight
+    // and let the clock catch up.
+    final stored = seasonIndexFromId(state.passSeasonId);
+    if (stored != null && stored > season.index) return false;
+
+    // '' means this save predates the pass (or is brand new) — stamp the
+    // season silently rather than announcing a rollover that never happened.
+    final firstEver = state.passSeasonId.isEmpty;
+    state = state.copyWith(
+      passSeasonId: season.id,
+      passXp: 0,
+      claimedPassFree: <String>{},
+      claimedPassVip: <String>{},
+    );
+    if (!firstEver) {
+      _notify(
+          NotifKind.reward,
+          'A new Travel Pass season',
+          '${season.name} has begun — $kPassLevelCount fresh levels to walk. '
+              '${season.emoji}',
+          id: 'pass-season-${season.id}');
+    }
+    return true;
+  }
+
+  /// Add pass XP and announce a level-up. Mutates [state] WITHOUT saving —
+  /// every caller is already in the middle of a change that saves, and this
+  /// riding along keeps steps from writing to disk twice.
+  void _addPassXp(int xp) {
+    if (xp <= 0) return;
+    _rollSeasonIfNeeded();
+    final before = passLevel;
+    if (before >= kPassLevelCount) return; // track maxed — nothing to bank
+    state = state.copyWith(passXp: state.passXp + xp);
+    final after = passLevel;
+    if (after > before) {
+      _notify(
+          NotifKind.reward,
+          'Travel Pass level $after',
+          after >= kPassLevelCount
+              ? 'You finished ${passSeason.name}. Claim the last of your rewards! 🏁'
+              : 'Level $after is yours — a new reward is waiting on the Pass. 🎁',
+          id: 'pass-${state.passSeasonId}-level-$after');
+    }
+  }
+
+  Set<String> _claims(bool vip) =>
+      vip ? state.claimedPassVip : state.claimedPassFree;
+
+  /// Whether [level]'s reward on the given track has already been taken.
+  bool passRewardClaimed(int level, {required bool vip}) =>
+      _claims(vip).contains('$level');
+
+  /// Whether [level]'s reward can be taken right now: the level is reached, the
+  /// cell isn't empty, it isn't already claimed, and — on the VIP track — VIP
+  /// is currently active.
+  bool passRewardClaimable(int level, {required bool vip}) {
+    final entry = passLevelAt(level);
+    if (entry == null) return false;
+    if ((vip ? entry.vip : entry.free) == null) return false;
+    if (passLevel < level) return false;
+    if (passRewardClaimed(level, vip: vip)) return false;
+    return vip ? _isVip : true;
+  }
+
+  /// How many rewards are sitting there unclaimed — drives the nav-bar badge.
+  int get passClaimableCount {
+    var n = 0;
+    for (var level = 1; level <= kPassLevelCount; level++) {
+      if (passRewardClaimable(level, vip: false)) n++;
+      if (passRewardClaimable(level, vip: true)) n++;
+    }
+    return n;
+  }
+
+  /// Grant one cell. Mutates [state] and stamps the claim; the caller saves.
+  /// Returns null when it wasn't claimable, so a double-tap can't pay twice.
+  PassReward? _takePassReward(int level, {required bool vip}) {
+    if (!passRewardClaimable(level, vip: vip)) return null;
+    final entry = passLevelAt(level)!;
+    final reward = (vip ? entry.vip : entry.free)!;
+
+    // Stamp first: if anything below throws, the reward is spent rather than
+    // repeatable.
+    if (vip) {
+      state = state.copyWith(claimedPassVip: {...state.claimedPassVip, '$level'});
+    } else {
+      state =
+          state.copyWith(claimedPassFree: {...state.claimedPassFree, '$level'});
+    }
+
+    switch (reward.kind) {
+      case PassRewardKind.pebbles:
+        // Spendable only, exactly like an IAP or ad grant — pass rewards never
+        // touch todaySteps or the health ladder.
+        state = state.copyWith(lifetimeSteps: state.lifetimeSteps + reward.amount);
+      case PassRewardKind.item:
+        state = state.copyWith(owned: {...state.owned, reward.itemId});
+      case PassRewardKind.boost:
+        // Extend from the later of now/current expiry so claiming a boost while
+        // one is already running stacks instead of throwing the remainder away
+        // (activateBoost overwrites; a reward you've earned shouldn't).
+        final now = DateTime.now().millisecondsSinceEpoch;
+        final base = state.boostUntilMs > now ? state.boostUntilMs : now;
+        state = state.copyWith(
+            boostUntilMs: base + reward.hours * Duration.millisecondsPerHour);
+    }
+    return reward;
+  }
+
+  /// Claim one reward. Null if it wasn't available (not reached, already taken,
+  /// empty cell, or the VIP track without VIP).
+  Future<PassReward?> claimPassReward(int level, {required bool vip}) async {
+    final rolled = _rollSeasonIfNeeded();
+    final reward = _takePassReward(level, vip: vip);
+    if (reward == null) {
+      if (rolled) await _save(); // don't drop a rollover on a refused claim
+      return null;
+    }
+    _checkTierUp();
+    await _save();
+    return reward;
+  }
+
+  /// Sweep up everything claimable in one pass — including the whole VIP column
+  /// earned before subscribing, which is the point of the retro-claim rule.
+  /// One save for the lot.
+  Future<List<PassReward>> claimAllPassRewards() async {
+    final rolled = _rollSeasonIfNeeded();
+    final claimed = <PassReward>[];
+    for (var level = 1; level <= kPassLevelCount; level++) {
+      for (final vip in const [false, true]) {
+        final reward = _takePassReward(level, vip: vip);
+        if (reward != null) claimed.add(reward);
+      }
+    }
+    if (claimed.isEmpty) {
+      if (rolled) await _save();
+      return claimed;
+    }
+    _checkTierUp();
+    await _save();
+    return claimed;
   }
 
   // --- Wearables (character slots) ---

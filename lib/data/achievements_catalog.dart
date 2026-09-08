@@ -8,7 +8,14 @@ import 'shop_catalog.dart';
 final int _stepSphereCount =
     kSphereTiers.where((t) => !t.isRealMoney).length;
 
-final int _shopItemCount = kShopCatalog.where((i) => i.inShop).length;
+/// Ids of everything actually purchasable. The Collector trophy counts against
+/// this set rather than `owned.length`, or the 25 reward-only items (sphere
+/// loot, Travel Pass exclusives) would each buy a free pass on the real thing.
+final Set<String> _shopItemIds = {
+  for (final i in kShopCatalog)
+    if (i.inShop) i.id,
+};
+final int _shopItemCount = _shopItemIds.length;
 
 /// Trophies, ordered easy → difficult. Each is a pure predicate over player
 /// state, so nothing extra needs storing or migrating.
@@ -94,5 +101,6 @@ final List<Achievement> kAchievements = [
       'Open every step sphere in one day', Difficulty.elite,
       (p) => p.openedSpheres.length >= _stepSphereCount),
   Achievement('collector', 'Collector', '💎', 'Own every shop item',
-      Difficulty.elite, (p) => p.owned.length >= _shopItemCount),
+      Difficulty.elite,
+      (p) => p.owned.where(_shopItemIds.contains).length >= _shopItemCount),
 ];

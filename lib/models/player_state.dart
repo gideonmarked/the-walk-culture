@@ -71,6 +71,17 @@ class PlayerState {
   final String requestPrayerRewardDate;
   final int requestPrayersRewardedToday;
 
+  // Travel Pass (core/travel_pass.dart). `passSeasonId` is the season the XP
+  // and claims below belong to; when the derived season no longer matches, the
+  // track has rolled over and all three reset. Claim sets hold level numbers as
+  // strings ('7'), one set per track — the VIP set can only grow while the
+  // player holds the (server-owned) VIP entitlement, but it PERSISTS after VIP
+  // lapses, so nothing already claimed is ever taken back.
+  final String passSeasonId;
+  final int passXp;
+  final Set<String> claimedPassFree;
+  final Set<String> claimedPassVip;
+
   const PlayerState({
     this.lifetimeSteps = 0,
     this.spentSteps = 0,
@@ -97,6 +108,10 @@ class PlayerState {
     this.gratitudeClaimedDate = '',
     this.requestPrayerRewardDate = '',
     this.requestPrayersRewardedToday = 0,
+    this.passSeasonId = '',
+    this.passXp = 0,
+    this.claimedPassFree = const {},
+    this.claimedPassVip = const {},
   });
 
   int get spendableSteps => lifetimeSteps - spentSteps;
@@ -127,6 +142,10 @@ class PlayerState {
     String? gratitudeClaimedDate,
     String? requestPrayerRewardDate,
     int? requestPrayersRewardedToday,
+    String? passSeasonId,
+    int? passXp,
+    Set<String>? claimedPassFree,
+    Set<String>? claimedPassVip,
   }) {
     return PlayerState(
       lifetimeSteps: lifetimeSteps ?? this.lifetimeSteps,
@@ -157,6 +176,10 @@ class PlayerState {
           requestPrayerRewardDate ?? this.requestPrayerRewardDate,
       requestPrayersRewardedToday:
           requestPrayersRewardedToday ?? this.requestPrayersRewardedToday,
+      passSeasonId: passSeasonId ?? this.passSeasonId,
+      passXp: passXp ?? this.passXp,
+      claimedPassFree: claimedPassFree ?? this.claimedPassFree,
+      claimedPassVip: claimedPassVip ?? this.claimedPassVip,
     );
   }
 
@@ -186,6 +209,10 @@ class PlayerState {
         'gratitudeClaimedDate': gratitudeClaimedDate,
         'requestPrayerRewardDate': requestPrayerRewardDate,
         'requestPrayersRewardedToday': requestPrayersRewardedToday,
+        'passSeasonId': passSeasonId,
+        'passXp': passXp,
+        'claimedPassFree': claimedPassFree.toList(),
+        'claimedPassVip': claimedPassVip.toList(),
       };
 
   factory PlayerState.fromJson(Map<String, dynamic> json) {
@@ -231,6 +258,12 @@ class PlayerState {
           (json['requestPrayerRewardDate'] as String?) ?? '',
       requestPrayersRewardedToday:
           (json['requestPrayersRewardedToday'] as num?)?.toInt() ?? 0,
+      // Saves written before the Travel Pass existed carry no season, so they
+      // land on '' and the first season roll picks them up as a new player.
+      passSeasonId: (json['passSeasonId'] as String?) ?? '',
+      passXp: (json['passXp'] as num?)?.toInt() ?? 0,
+      claimedPassFree: strSet(json['claimedPassFree']),
+      claimedPassVip: strSet(json['claimedPassVip']),
     );
   }
 }

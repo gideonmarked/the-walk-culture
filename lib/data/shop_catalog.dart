@@ -1,4 +1,5 @@
 import '../models/shop_item.dart';
+import 'pass_catalog.dart';
 
 /// Hand-authored seed catalog. Emoji are placeholders — drop a 64x64 PNG at
 /// each item's [ShopItem.asset] path to replace it (see docs/ASSETS.md).
@@ -265,10 +266,24 @@ const List<ShopItem> _kPrestige = [
   ShopItem(id: 'pr_eternity_cloak', name: 'Eternity Cloak', emoji: '✨', slot: ItemSlot.top, rarity: Rarity.celestial, priceTier: 'Diamond', priceAmount: 2),
 ];
 
-/// The full shop: hand-authored seed first (curated items lead), then the
-/// generated colour variants, then the prestige line above Gold. Computed once.
+/// Every cosmetic in the game: hand-authored seed first (curated items lead),
+/// then the generated colour variants, the prestige line above Gold, and the
+/// Travel Pass exclusives. Computed once.
+///
+/// Pass items live here so Collection, the character compositor, and equip all
+/// find them by id — they're just filtered out of the shop shelves (`inShop`)
+/// and out of the random-roll pool ([kRollableCatalog]).
 final List<ShopItem> kShopCatalog = [
   ..._kSeedCatalog,
   ..._generatedCatalog(),
   ..._kPrestige,
+  ...kPassCatalog,
 ];
+
+/// The pool a random reward may draw from — spheres, and the daily Bible /
+/// prayer / gratitude rolls. Excludes Travel Pass exclusives: those are earned
+/// on the track (the VIP half by subscribing), so a lucky sphere must never
+/// hand one over. Everything else, including reward-only drops like the Baby
+/// Dragon, stays rollable.
+final List<ShopItem> kRollableCatalog =
+    kShopCatalog.where((i) => !i.passExclusive).toList();

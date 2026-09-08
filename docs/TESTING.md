@@ -30,6 +30,11 @@ flutter test --coverage  # writes coverage/lcov.info
 - `test/currency_test.dart` — `toWallet()` base-1000 split, `priceInSteps()`.
 - `test/streak_test.dart` — streak increments on consecutive goal days, resets on a gap, updates best.
 - Purchase logic — cannot buy when `spendableSteps < cost`; cannot re-buy owned.
+- `test/travel_pass_test.dart` — pass XP is **raw walked steps** (VIP/boost and
+  bought/ad steps must never move the track), the VIP column locks and
+  retro-unlocks, a reward pays once, seasons roll over, and no pass cosmetic
+  can reach `kRollableCatalog`. `test/travel_pass_screen_test.dart` covers the
+  screen + the nav badge.
 
 ### Integration test (on a device)
 ```bash
@@ -74,6 +79,28 @@ the **+500 steps (simulate)** button where noted so you don't have to walk.
 20. Airplane mode → passive steps still read from Health Connect (no network needed).
 21. Change device date backward → app doesn't grant negative/huge deltas
     (delta clamped at ≥ 0; server-side plausibility caps come in Phase 1).
+
+### F. Travel Pass (doc §12)
+Fastest route: dev build, simulate 8,000 steps per level.
+22. Simulate 8,000 → **Pass** tab badges **1**; header reads Level 1 and the
+    season's countdown.
+23. Claim the level 1 free reward → currency/item lands, cell shows claimed,
+    badge clears. Tap it again → nothing (a reward pays once).
+24. Simulate to level 3+ **without VIP** → the VIP column stays locked at every
+    rung; tapping a locked cell explains what's behind it and offers the Store.
+25. Buy VIP in the Store → return to Pass → **every VIP reward already earned is
+    claimable** (retro-unlock), the upsell strip is gone, "Claim all" appears.
+26. **Claim all** → one sweep pays every open cell on both columns; a VIP
+    cosmetic appears in Collection and equips on the avatar.
+27. Let VIP lapse (or clear it in the dev tools) → already-claimed VIP rewards
+    stay owned; unclaimed ones re-lock.
+28. Watch a rewarded ad / buy a Pebble pack → currency rises, **pass XP does
+    not move** (money must not buy the climb).
+29. Open Mystery Spheres and every daily practice repeatedly → a pass-exclusive
+    cosmetic never drops (they are excluded from the roll pool).
+30. Change the device date forward past the season end → next state change rolls
+    the season: level back to 0, claims cleared, "A new Travel Pass season" in
+    the inbox — and items/currency already granted are **still there**.
 
 ---
 

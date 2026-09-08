@@ -22,9 +22,11 @@ void main() {
     await tester.tap(find.text('Skip for now')); // past onboarding
     await tester.pumpAndSettle();
 
-    // The Spheres tab is gone: 4 destinations, none of them Spheres.
-    expect(find.byType(NavigationDestination), findsNWidgets(4));
+    // The Spheres tab is gone: Home / Quests / Pass / Shop / Profile, none of
+    // them Spheres.
+    expect(find.byType(NavigationDestination), findsNWidgets(5));
     expect(find.text('Spheres'), findsNothing);
+    expect(find.text('Pass'), findsOneWidget);
 
     // Quests now leads with the spheres section, quest list underneath.
     await tester.tap(find.text('Quests'));

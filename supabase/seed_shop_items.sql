@@ -577,7 +577,24 @@ insert into shop_item (id, name, slot, rarity, price_tier, price_amount, in_shop
   ('pr_ruby_halo', 'Ruby Halo', 'accessory', 'celestial', 'Ruby', 1, true),
   ('pr_inferno_mane', 'Inferno Mane', 'hair', 'celestial', 'Ruby', 3, true),
   ('pr_diamond_crown', 'Diamond Crown', 'hat', 'celestial', 'Diamond', 1, true),
-  ('pr_eternity_cloak', 'Eternity Cloak', 'top', 'celestial', 'Diamond', 2, true)
+  ('pr_eternity_cloak', 'Eternity Cloak', 'top', 'celestial', 'Diamond', 2, true),
+  ('pass_trail_cap', 'Trail Cap', 'hat', 'uncommon', 'Copper', 0, false),
+  ('pass_wayfarer_tee', 'Wayfarer Tee', 'top', 'uncommon', 'Copper', 0, false),
+  ('pass_dust_boots', 'Dust Road Boots', 'shoes', 'rare', 'Silver', 0, false),
+  ('pass_lantern', 'Road Lantern', 'home', 'rare', 'Silver', 0, false),
+  ('pass_pilgrim_staff', 'Pilgrim Staff', 'accessory', 'rare', 'Silver', 0, false),
+  ('pass_vip_sash', 'Traveler''s Sash', 'accessory', 'rare', 'Silver', 0, false),
+  ('pass_vip_cloak', 'Cartographer''s Cloak', 'top', 'rare', 'Silver', 0, false),
+  ('pass_vip_compass', 'Golden Compass', 'accessory', 'epic', 'Gold', 0, false),
+  ('pass_vip_hat', 'Caravan Hat', 'hat', 'epic', 'Gold', 0, false),
+  ('pass_vip_camel', 'Desert Camel', 'pet', 'epic', 'Gold', 0, false),
+  ('pass_vip_braid', 'Horizon Braid', 'hair', 'epic', 'Gold', 0, false),
+  ('pass_vip_coat', 'Wanderer''s Coat', 'top', 'legendary', 'Titanium', 0, false),
+  ('pass_vip_boots', 'Starlit Boots', 'shoes', 'legendary', 'Titanium', 0, false),
+  ('pass_vip_phoenix', 'Trail Phoenix', 'pet', 'legendary', 'Titanium', 0, false),
+  ('pass_vip_mantle', 'Aurora Mantle', 'accessory', 'legendary', 'Titanium', 0, false),
+  ('pass_vip_crown', 'Sunrise Crown', 'hat', 'celestial', 'Platinum', 0, false),
+  ('pass_vip_halo', 'Wayfinder''s Halo', 'accessory', 'celestial', 'Platinum', 0, false)
 on conflict (id) do update set
   name = excluded.name,
   slot = excluded.slot,
@@ -586,5 +603,5 @@ on conflict (id) do update set
   price_amount = excluded.price_amount,
   in_shop = excluded.in_shop;
 
--- 575 items seeded.
+-- 592 items seeded.
 

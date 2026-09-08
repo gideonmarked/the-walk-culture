@@ -26,7 +26,22 @@ class NotificationsController extends StateNotifier<List<AppNotification>> {
       final list = (jsonDecode(raw) as List)
           .map((e) => AppNotification.fromJson((e as Map).cast<String, dynamic>()))
           .toList();
-      state = list;
+      // MERGE, never overwrite. Reading this provider is what constructs the
+      // controller, so a notification added by that very first read — e.g. the
+      // Travel Pass season roll, which fires from PlayerController._init — is
+      // already in `state` while this load is still in flight. Assigning the
+      // saved list straight over it would silently drop the new entry for
+      // anyone whose inbox wasn't empty.
+      final pending = state;
+      if (pending.isEmpty) {
+        state = list;
+        return;
+      }
+      final seen = {for (final n in pending) n.id};
+      state = [...pending, ...list.where((n) => !seen.contains(n.id))]
+        ..sort((a, b) => b.createdAtMs.compareTo(a.createdAtMs));
+      state = state.take(_cap).toList();
+      await _save(); // re-persist so the merged-in entries stick
     } catch (e) {
       debugPrint('Failed to load notifications: $e');
     }
