@@ -6,6 +6,10 @@ Character customisation is prioritised; home comes second.
 
 ---
 
+> **What to draw:** [`ART_MANIFEST.md`](ART_MANIFEST.md) — every sprite the
+> catalog expects, by filename, with a done/not-done column. Generated, so it
+> can't drift from the catalog.
+
 ## 1. Folder layout (registered in `pubspec.yaml`)
 
 ```

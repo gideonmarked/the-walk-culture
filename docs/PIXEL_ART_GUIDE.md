@@ -342,6 +342,13 @@ Workflow for "N styles × M colours":
 
 ## 7. Minimum viable art set (what to make first)
 
+> **Every sprite, by name:** [`ART_MANIFEST.md`](ART_MANIFEST.md) is generated
+> from the catalog and lists each file to be drawn, its canvas, and whether it
+> exists yet — including the Travel Pass exclusives, which this guide predates.
+> Regenerate it with `dart run tool/art_manifest.dart > docs/ART_MANIFEST.md`.
+> The section below is the *shape* of the priority order; the manifest is the
+> checklist.
+
 Prioritised so the game looks real fast, cheapest first:
 
 1. **The 4 key pose bases** in `base_medium`: `_0` laying, `_2` hunched, `_3`

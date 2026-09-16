@@ -19,6 +19,7 @@ clean and all tests pass.**
 | [`docs/BACKEND.md`](docs/BACKEND.md) | Phase 1 server setup + provider choice (Supabase vs Firebase) |
 | [`docs/ANDROID.md`](docs/ANDROID.md) | Android setup & run (**primary target**) |
 | [`docs/IOS.md`](docs/IOS.md) | iOS setup & run (Mac only, deferred) |
+| [`docs/ART_MANIFEST.md`](docs/ART_MANIFEST.md) | **generated** — every sprite to draw, by filename, with progress |
 | [`docs/TESTING.md`](docs/TESTING.md) | automated + manual test plan (Android-first) |
 
 ---
