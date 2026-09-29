@@ -266,6 +266,7 @@ declare
   v_price bigint;
   v_tier text;
   v_in_shop boolean;
+  v_slot text;
   v_spendable bigint;
 begin
   if v_user is null then raise exception 'not authenticated'; end if;
@@ -275,12 +276,17 @@ begin
     raise exception 'already owned';
   end if;
 
-  select price_tier, in_shop, (price_amount)::bigint * steps_per_unit(price_tier)
-    into v_tier, v_in_shop, v_price
+  select price_tier, in_shop, (price_amount)::bigint * steps_per_unit(price_tier), slot
+    into v_tier, v_in_shop, v_price, v_slot
     from shop_item where id = p_item_id;
   if v_price is null then raise exception 'unknown item'; end if;
   -- Reward-only loot is in the catalogue but never for sale.
   if not coalesce(v_in_shop, false) then raise exception 'not purchasable'; end if;
+  -- Pets are VIP-store stock (MUST match ShopItem.vipStoreOnly).
+  if v_slot = 'pet' and not exists (
+       select 1 from entitlement where user_id = v_user and vip_until > now()) then
+    raise exception 'vip only';
+  end if;
 
   select total_steps_lifetime - total_steps_spent into v_spendable
     from wallet where user_id = v_user for update;
