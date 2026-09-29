@@ -4,6 +4,47 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'supabase_config.dart';
 
+/// What the server said about a store purchase. The three answers need three
+/// different actions from the billing code, so a bool isn't enough: finishing
+/// a purchase the server simply couldn't reach would consume it unpaid-out.
+enum ValidationOutcome {
+  /// Verified and granted (or already granted earlier). Finish the purchase.
+  granted,
+
+  /// Refused for good — forged, refunded, unknown product. Finish it too, so
+  /// it stops coming back, but grant nothing.
+  rejected,
+
+  /// No answer: offline, backend not ready, or a server error. Leave the
+  /// purchase open; Play redelivers it and the next launch retries.
+  retryLater,
+}
+
+class PurchaseValidation {
+  const PurchaseValidation(this.outcome, {this.vipUntil});
+
+  final ValidationOutcome outcome;
+
+  /// For a subscription: the expiry the server now holds.
+  final DateTime? vipUntil;
+}
+
+/// A server lookup that tells "the answer is nothing" apart from "no answer".
+/// Treating a failed request as an empty one is how a network blip used to
+/// cancel VIP or get a fresh save pushed over a real backup.
+class CloudResult<T> {
+  const CloudResult.found(T this.value) : failed = false;
+  const CloudResult.none()
+      : value = null,
+        failed = false;
+  const CloudResult.failed()
+      : value = null,
+        failed = true;
+
+  final T? value;
+  final bool failed;
+}
+
 /// The backend seam. Every method is a no-op / null when the app was built
 /// without Supabase credentials, so the game stays fully playable offline and
 /// the test suite never touches the network.
@@ -12,7 +53,7 @@ import 'supabase_config.dart';
 ///   * VIP entitlement  — SERVER authoritative. Read from `entitlement`, which
 ///     is written only by the validate-purchase Edge Function. The client can
 ///     never grant itself VIP.
-///   * Player progress  — cloud BACKUP (`profile.save_blob`) for reinstall /
+///   * Player progress  — cloud BACKUP (`player_save`) for reinstall /
 ///     new-device restore. Client-authored, so not yet anti-cheat; the
 ///     `credit_steps` RPC is already in the schema for when the wallet moves
 ///     server-side.
@@ -48,16 +89,21 @@ class CloudSyncService {
     }
   }
 
+  /// Whether this build has a backend at all. When false, "not ready" is
+  /// permanent and there is no cloud to wait for.
+  bool get isConfigured => SupabaseConfig.isConfigured;
+
   bool get isReady =>
       _initialised && Supabase.instance.client.auth.currentUser != null;
 
   SupabaseClient get _db => Supabase.instance.client;
   String? get _uid => _db.auth.currentUser?.id;
 
-  /// Server-authoritative VIP expiry. Null when unconfigured, signed out, or
-  /// the player has never subscribed.
-  Future<DateTime?> fetchVipUntil() async {
-    if (!isReady) return null;
+  /// Server-authoritative VIP expiry. [CloudResult.none] means the player has
+  /// never subscribed; [CloudResult.failed] means we couldn't ask (unconfigured,
+  /// signed out, or the request failed) and says nothing about VIP.
+  Future<CloudResult<DateTime>> fetchVipUntil() async {
+    if (!isReady) return const CloudResult.failed();
     try {
       final row = await _db
           .from('entitlement')
@@ -65,30 +111,50 @@ class CloudSyncService {
           .eq('user_id', _uid!)
           .maybeSingle();
       final raw = row?['vip_until'] as String?;
-      return raw == null ? null : DateTime.parse(raw).toLocal();
+      return raw == null
+          ? const CloudResult.none()
+          : CloudResult.found(DateTime.parse(raw).toLocal());
     } catch (e) {
       debugPrint('fetchVipUntil failed: $e');
-      return null;
+      return const CloudResult.failed();
     }
   }
 
-  /// Hand a validated store purchase to the backend. The Edge Function verifies
-  /// the receipt with Google and grants the entitlement; we never grant locally.
-  /// Returns true when the server confirms the grant.
-  Future<bool> validatePurchase({
+  /// Hand a store purchase to the backend. The Edge Function verifies the
+  /// receipt with Google and grants the entitlement. See [ValidationOutcome]
+  /// for what the caller must do with each answer.
+  Future<PurchaseValidation> validatePurchase({
     required String productId,
     required String purchaseToken,
   }) async {
-    if (!isReady) return false;
+    if (!isReady) return const PurchaseValidation(ValidationOutcome.retryLater);
     try {
       final res = await _db.functions.invoke('validate-purchase', body: {
         'productId': productId,
         'purchaseToken': purchaseToken,
       });
-      return (res.data as Map?)?['ok'] == true;
+      final data = res.data as Map?;
+      if (data?['ok'] != true) {
+        return const PurchaseValidation(ValidationOutcome.retryLater);
+      }
+      final until = data?['vipUntil'] as String?;
+      return PurchaseValidation(ValidationOutcome.granted,
+          vipUntil: until == null ? null : DateTime.parse(until).toLocal());
+    } on FunctionException catch (e) {
+      debugPrint('validatePurchase refused: $e');
+      // 4xx is the server's final word on this receipt. 401 is our session,
+      // not the receipt, and 408/429 are "try again" by definition.
+      final permanent = e.status >= 400 &&
+          e.status < 500 &&
+          e.status != 401 &&
+          e.status != 408 &&
+          e.status != 429;
+      return PurchaseValidation(permanent
+          ? ValidationOutcome.rejected
+          : ValidationOutcome.retryLater);
     } catch (e) {
       debugPrint('validatePurchase failed: $e');
-      return false;
+      return const PurchaseValidation(ValidationOutcome.retryLater);
     }
   }
 
@@ -109,35 +175,46 @@ class CloudSyncService {
 
   /// Upload the player's save. Fire-and-forget: a failed backup must never
   /// break play.
+  ///
+  /// The blob goes to the owner-only `player_save` table; `profile` is
+  /// readable by everyone (friend discovery), so it only gets the few stats
+  /// that are meant to be public.
   Future<void> pushSave(Map<String, dynamic> saveJson) async {
     if (!isReady) return;
+    final now = DateTime.now().toUtc().toIso8601String();
     try {
-      await _db.from('profile').upsert({
+      await _db.from('player_save').upsert({
         'user_id': _uid,
         'save_blob': saveJson,
+        'updated_at': now,
+      });
+      await _db.from('profile').upsert({
+        'user_id': _uid,
         'health_level': saveJson['healthLevel'],
         'streak_current': saveJson['streakCurrent'],
         'streak_best': saveJson['streakBest'],
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
+        'updated_at': now,
       });
     } catch (e) {
       debugPrint('pushSave failed: $e');
     }
   }
 
-  /// Download the cloud save, or null when there isn't one.
-  Future<Map<String, dynamic>?> pullSave() async {
-    if (!isReady) return null;
+  /// Download the cloud save. [CloudResult.none] means there is no backup;
+  /// [CloudResult.failed] means we couldn't find out.
+  Future<CloudResult<Map<String, dynamic>>> pullSave() async {
+    if (!isReady) return const CloudResult.failed();
     try {
       final row = await _db
-          .from('profile')
+          .from('player_save')
           .select('save_blob')
           .eq('user_id', _uid!)
           .maybeSingle();
-      return (row?['save_blob'] as Map?)?.cast<String, dynamic>();
+      final blob = (row?['save_blob'] as Map?)?.cast<String, dynamic>();
+      return blob == null ? const CloudResult.none() : CloudResult.found(blob);
     } catch (e) {
       debugPrint('pullSave failed: $e');
-      return null;
+      return const CloudResult.failed();
     }
   }
 }

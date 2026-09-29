@@ -23,6 +23,7 @@ class PremiumState {
     this.stipendDay = '',
     this.purchasedStepsTotal = 0,
     this.adStepsTotal = 0,
+    this.fulfilledPurchases = const [],
   });
 
   /// VIP is active until this epoch-millis (0 = never subscribed).
@@ -38,6 +39,14 @@ class PremiumState {
   /// Lifetime totals, for the stats screen and honest analytics.
   final int purchasedStepsTotal;
   final int adStepsTotal;
+
+  /// Store purchases already credited to the wallet, by order id — newest
+  /// last, capped at [kMaxFulfilledPurchases]. Play can deliver the same
+  /// purchase more than once (a restore, a relaunch before it was finished),
+  /// and each delivery must credit at most once.
+  final List<String> fulfilledPurchases;
+
+  static const kMaxFulfilledPurchases = 200;
 
   bool get isVip => vipUntilMs > DateTime.now().millisecondsSinceEpoch;
 
@@ -58,6 +67,7 @@ class PremiumState {
     String? stipendDay,
     int? purchasedStepsTotal,
     int? adStepsTotal,
+    List<String>? fulfilledPurchases,
   }) =>
       PremiumState(
         vipUntilMs: vipUntilMs ?? this.vipUntilMs,
@@ -66,6 +76,7 @@ class PremiumState {
         stipendDay: stipendDay ?? this.stipendDay,
         purchasedStepsTotal: purchasedStepsTotal ?? this.purchasedStepsTotal,
         adStepsTotal: adStepsTotal ?? this.adStepsTotal,
+        fulfilledPurchases: fulfilledPurchases ?? this.fulfilledPurchases,
       );
 
   Map<String, dynamic> toJson() => {
@@ -75,6 +86,7 @@ class PremiumState {
         'stipendDay': stipendDay,
         'purchasedStepsTotal': purchasedStepsTotal,
         'adStepsTotal': adStepsTotal,
+        'fulfilledPurchases': fulfilledPurchases,
       };
 
   factory PremiumState.fromJson(Map<String, dynamic> j) => PremiumState(
@@ -84,6 +96,8 @@ class PremiumState {
         stipendDay: (j['stipendDay'] as String?) ?? '',
         purchasedStepsTotal: (j['purchasedStepsTotal'] as num?)?.toInt() ?? 0,
         adStepsTotal: (j['adStepsTotal'] as num?)?.toInt() ?? 0,
+        fulfilledPurchases:
+            (j['fulfilledPurchases'] as List?)?.cast<String>() ?? const [],
       );
 }
 
@@ -98,6 +112,10 @@ class PremiumController extends StateNotifier<PremiumState> {
 
   final Ref _ref;
   static const _key = 'stepquest_premium_v1';
+
+  /// Bumped by every VIP grant, so a server read that started before a grant
+  /// can tell its answer is stale and must not overwrite it.
+  int _vipWrites = 0;
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -116,11 +134,40 @@ class PremiumController extends StateNotifier<PremiumState> {
   Future<void> refreshEntitlementFromServer() async {
     final cloud = _ref.read(cloudSyncProvider);
     if (!cloud.isReady) return;
-    final until = await cloud.fetchVipUntil();
-    // A null server value means "never subscribed" — trust it and clear any
-    // stale local VIP, otherwise a wiped/refunded subscription would linger.
-    state = state.copyWith(vipUntilMs: until?.millisecondsSinceEpoch ?? 0);
+    final writesBefore = _vipWrites;
+    final result = await cloud.fetchVipUntil();
+    // A failed read says nothing about VIP — keep what we have. Only a real
+    // answer may clear it.
+    if (result.failed) return;
+    // A purchase validated while this read was in flight is newer than it.
+    if (_vipWrites != writesBefore) return;
+    // "No row" means never subscribed — trust it and clear any stale local
+    // VIP, otherwise a wiped/refunded subscription would linger.
+    state = state.copyWith(vipUntilMs: result.value?.millisecondsSinceEpoch ?? 0);
     await _save();
+  }
+
+  /// Adopt the expiry the server just granted for a validated subscription.
+  /// The server's value is absolute (Google's expiry), so applying it twice is
+  /// harmless; a later local expiry — another plan — is kept.
+  Future<void> setVipUntil(DateTime until) async {
+    _vipWrites++;
+    final ms = until.millisecondsSinceEpoch;
+    if (ms > state.vipUntilMs) state = state.copyWith(vipUntilMs: ms);
+    await _save();
+  }
+
+  /// Claim [purchaseKey] for crediting. True exactly once per key; the claim
+  /// lands in state synchronously, so two deliveries racing each other can't
+  /// both see "not yet credited".
+  bool markPurchaseFulfilled(String purchaseKey) {
+    if (state.fulfilledPurchases.contains(purchaseKey)) return false;
+    final keys = [...state.fulfilledPurchases, purchaseKey];
+    final overflow = keys.length - PremiumState.kMaxFulfilledPurchases;
+    state = state.copyWith(
+        fulfilledPurchases: overflow > 0 ? keys.sublist(overflow) : keys);
+    _save();
+    return true;
   }
 
   Future<void> _save() async {
@@ -134,6 +181,7 @@ class PremiumController extends StateNotifier<PremiumState> {
   /// so renewals stack rather than reset. Called AFTER a subscription purchase
   /// has been validated (server-side in production).
   Future<void> grantVip(int days) async {
+    _vipWrites++;
     final now = DateTime.now().millisecondsSinceEpoch;
     final base = state.vipUntilMs > now ? state.vipUntilMs : now;
     state = state.copyWith(

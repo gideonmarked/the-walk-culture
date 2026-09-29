@@ -6,7 +6,6 @@ import '../../core/premium.dart';
 import '../../services/cloud/cloud_sync_service.dart';
 import '../../services/purchase_service.dart';
 import '../../services/rewarded_ad_service.dart';
-import '../../services/store_purchase_service.dart';
 import '../../state/app_providers.dart';
 import '../../state/premium_providers.dart';
 
@@ -29,11 +28,9 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
   @override
   void initState() {
     super.initState();
-    final svc = ref.read(purchaseServiceProvider);
-    // Begin listening for purchase updates and restore anything Play still owes
-    // this user (e.g. a purchase that completed while the app was closed).
-    if (svc is StorePurchaseService) svc.start();
-    _loadPrices(svc);
+    // The purchase listener itself starts at launch (main.dart), so purchases
+    // are credited whether or not this screen is open.
+    _loadPrices(ref.read(purchaseServiceProvider));
   }
 
   Future<void> _loadPrices(PurchaseService svc) async {
@@ -101,32 +98,45 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
     return ok ?? false;
   }
 
+  // Crediting is NOT done here: the billing layer credits every verified
+  // purchase itself (PurchaseFulfiller), so leaving this screen mid-purchase
+  // can't lose it. These handlers only report the outcome.
+
   Future<void> _buyPack(CurrencyPack pack) async {
     if (_busy) return;
     if (!await _confirmSimulated('Buy ${pack.label}', _price(pack.storeProductId, pack.priceLabel))) return;
+    if (!mounted) return;
     setState(() => _busy = true);
     final status = await ref.read(purchaseServiceProvider).buy(pack.storeProductId);
+    if (!mounted) return;
     if (status == PurchaseStatus.purchased) {
-      await ref.read(playerControllerProvider.notifier).grantBonusSteps(pack.steps);
-      await ref.read(premiumControllerProvider.notifier)
-          .recordPurchasedSteps(pack.steps);
       _toast('+${_fmt.format(pack.steps)} Pebbles added to your wallet');
-    } else if (status == PurchaseStatus.unavailable) {
-      _toast('Store unavailable — billing not configured yet');
+    } else {
+      _reportUnfinished(status);
     }
-    if (mounted) setState(() => _busy = false);
+    setState(() => _busy = false);
+  }
+
+  void _reportUnfinished(PurchaseStatus status) {
+    if (status == PurchaseStatus.unavailable) {
+      _toast('Store unavailable — billing not configured yet');
+    } else if (status == PurchaseStatus.deferred) {
+      _toast("Purchase received — it'll be added as soon as we can confirm "
+          'it with the store');
+    }
   }
 
   Future<void> _buyVip(VipPlan plan) async {
     if (_busy) return;
     if (!await _confirmSimulated(plan.label, _price(plan.storeProductId, plan.priceLabel))) return;
+    if (!mounted) return;
     setState(() => _busy = true);
     final status = await ref.read(purchaseServiceProvider).buy(plan.storeProductId);
+    if (!mounted) return;
     if (status == PurchaseStatus.purchased) {
-      await ref.read(premiumControllerProvider.notifier).grantVip(plan.days);
-      // Credit the day's stipend right away if this upgrade just made them VIP.
-      await ref.read(playerControllerProvider.notifier).maybeGrantVipStipend();
       _toast('VIP active — enjoy your perks!');
+    } else {
+      _reportUnfinished(status);
     }
     if (mounted) setState(() => _busy = false);
   }
@@ -138,13 +148,16 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
       _toast("You've hit today's ad reward limit — come back tomorrow");
       return;
     }
+    // Read everything up front: the ad and the claim both await, and `ref` is
+    // unusable if the player leaves the screen meanwhile.
+    final player = ref.read(playerControllerProvider.notifier);
+    final cloud = ref.read(cloudSyncProvider);
     setState(() => _busy = true);
     final outcome = await ref.read(rewardedAdServiceProvider).show();
     if (outcome == AdOutcome.earned) {
       // The SERVER is the authority on the daily cap when we're online — the
       // local counter is a tampered-client-bypassable UX nicety. Offline we
       // fall back to the local cap and reconcile on the next online claim.
-      final cloud = ref.read(cloudSyncProvider);
       var allowed = true;
       if (cloud.isReady) {
         allowed = await cloud.claimAdReward(rewardSteps: kAdRewardSteps) != null;
@@ -154,9 +167,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
       }
       // Re-check + record locally so double-taps can't double-reward.
       if (allowed && premium.recordAdReward()) {
-        await ref
-            .read(playerControllerProvider.notifier)
-            .grantBonusSteps(kAdRewardSteps);
+        await player.grantBonusSteps(kAdRewardSteps);
         _toast('+${_fmt.format(kAdRewardSteps)} Pebbles for watching!');
       }
     } else if (outcome == AdOutcome.failed) {

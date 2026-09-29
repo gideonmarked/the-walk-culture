@@ -28,6 +28,9 @@ dependencies:
   shared_preferences: ^2.2.3   # local save + offline cache in front of Supabase
   intl: ^0.19.0
   in_app_purchase: ^3.3.0
+  # Direct, for consumePurchase(): packs are consumed only after the server
+  # validates them (see store_purchase_service.dart).
+  in_app_purchase_android: ^0.5.1
   google_mobile_ads: ^9.0.0
   flutter_local_notifications: ^18.0.1  # in-app inbox alerts → phone tray
 
