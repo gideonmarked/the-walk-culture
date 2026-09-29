@@ -31,6 +31,10 @@ class PlayerState {
   // 2x earning boost active until this epoch-millis (0 = no boost). Doc §5.2.
   final int boostUntilMs;
 
+  // Day-key the free daily boost was last used. One free hour per day; without
+  // this the Home card handed out a permanent 2x (4x with VIP).
+  final String freeBoostDay;
+
   // Mystery Sphere tiers already opened today (doc §6). Reset daily. A tier
   // unlocks when todaySteps reaches its threshold and can be opened once/day.
   final Set<String> openedSpheres;
@@ -95,6 +99,7 @@ class PlayerState {
     this.claimedAchievements = const {},
     this.highestTierReached = 0,
     this.boostUntilMs = 0,
+    this.freeBoostDay = '',
     this.openedSpheres = const {},
     this.sphereRewards = const {},
     this.owned = const {},
@@ -129,6 +134,7 @@ class PlayerState {
     Set<String>? claimedAchievements,
     int? highestTierReached,
     int? boostUntilMs,
+    String? freeBoostDay,
     Set<String>? openedSpheres,
     Map<String, String>? sphereRewards,
     Set<String>? owned,
@@ -160,6 +166,7 @@ class PlayerState {
       claimedAchievements: claimedAchievements ?? this.claimedAchievements,
       highestTierReached: highestTierReached ?? this.highestTierReached,
       boostUntilMs: boostUntilMs ?? this.boostUntilMs,
+      freeBoostDay: freeBoostDay ?? this.freeBoostDay,
       openedSpheres: openedSpheres ?? this.openedSpheres,
       sphereRewards: sphereRewards ?? this.sphereRewards,
       owned: owned ?? this.owned,
@@ -196,6 +203,7 @@ class PlayerState {
         'claimedAchievements': claimedAchievements.toList(),
         'highestTierReached': highestTierReached,
         'boostUntilMs': boostUntilMs,
+        'freeBoostDay': freeBoostDay,
         'openedSpheres': openedSpheres.toList(),
         'sphereRewards': sphereRewards,
         'owned': owned.toList(),
@@ -240,6 +248,7 @@ class PlayerState {
       claimedAchievements: strSet(json['claimedAchievements']),
       highestTierReached: (json['highestTierReached'] as num?)?.toInt() ?? 0,
       boostUntilMs: (json['boostUntilMs'] as num?)?.toInt() ?? 0,
+      freeBoostDay: (json['freeBoostDay'] as String?) ?? '',
       openedSpheres: strSet(json['openedSpheres']),
       sphereRewards: {
         for (final e in ((json['sphereRewards'] as Map?) ?? const {}).entries)

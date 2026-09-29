@@ -458,11 +458,26 @@ class PlayerController extends StateNotifier<PlayerState> {
       (boostActive ? 2 : 1) *
       (_ref.read(premiumControllerProvider).isVip ? 2 : 1);
 
-  /// Activate a 2x earning boost for [duration].
-  Future<void> activateBoost({Duration duration = const Duration(hours: 1)}) async {
-    final until = DateTime.now().add(duration).millisecondsSinceEpoch;
-    state = state.copyWith(boostUntilMs: until);
+  /// Whether today's free boost is still unused.
+  bool get freeBoostAvailable => state.freeBoostDay != _todayKey;
+
+  /// Use today's free 2x earning boost for [duration]. Once per day: returns
+  /// false (no-op) when it's already been used today. Travel Pass boost
+  /// rewards are separate and don't count against it.
+  Future<bool> activateBoost({Duration duration = const Duration(hours: 1)}) async {
+    if (!freeBoostAvailable) return false;
+    final now = DateTime.now();
+    // Extend rather than overwrite, so a Travel Pass boost already running
+    // isn't cut short.
+    final base = state.boostUntilMs > now.millisecondsSinceEpoch
+        ? state.boostUntilMs
+        : now.millisecondsSinceEpoch;
+    state = state.copyWith(
+      boostUntilMs: base + duration.inMilliseconds,
+      freeBoostDay: _todayKey,
+    );
     await _save();
+    return true;
   }
 
   /// Close out the previous day: grade the character's health against the steps
@@ -533,8 +548,13 @@ class PlayerController extends StateNotifier<PlayerState> {
   }
 
   Future<void> _doSync() async {
+    final dayOfRead = _todayKey;
     final todayTotal = await _health.getTodaySteps();
     if (todayTotal == null) return; // prototype uses addSimulatedSteps instead
+    // The read straddled midnight: it may be yesterday's total, which the
+    // "new day" branch below would credit a second time as today's. Drop it;
+    // the next poll reads the new day cleanly.
+    if (_todayKey != dayOfRead) return;
 
     final newDay = _lastSyncDate != _todayKey;
     final alreadyCredited = newDay ? 0 : state.todaySteps;
@@ -924,7 +944,7 @@ class PlayerController extends StateNotifier<PlayerState> {
       case PassRewardKind.boost:
         // Extend from the later of now/current expiry so claiming a boost while
         // one is already running stacks instead of throwing the remainder away
-        // (activateBoost overwrites; a reward you've earned shouldn't).
+        // (a reward you've earned shouldn't be cut short).
         final now = DateTime.now().millisecondsSinceEpoch;
         final base = state.boostUntilMs > now ? state.boostUntilMs : now;
         state = state.copyWith(

@@ -180,4 +180,18 @@ void main() {
       expect(c.read(playerControllerProvider).lifetimeSteps, 50000);
     });
   });
+
+  test('the free boost works once per day', () async {
+    kEnableBackgroundServices = false;
+    SharedPreferences.setMockInitialValues({});
+    final c = ProviderContainer();
+    addTearDown(c.dispose);
+    final player = c.read(playerControllerProvider.notifier);
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+
+    expect(await player.activateBoost(), isTrue);
+    expect(player.boostActive, isTrue);
+    expect(await player.activateBoost(), isFalse);
+    expect(player.freeBoostAvailable, isFalse);
+  });
 }
