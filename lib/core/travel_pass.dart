@@ -1,4 +1,4 @@
-/// Travel Pass — the seasonal reward track (doc §11 roadmap: "cosmetic pass").
+/// Culture Pass — the seasonal reward track (doc §11 roadmap: "cosmetic pass").
 ///
 /// Thirty levels, two tracks. Everyone climbs the same ladder by WALKING; VIPs
 /// unlock a second column of rewards on it. Pure logic + the reward table, so

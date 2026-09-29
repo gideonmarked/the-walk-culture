@@ -28,7 +28,7 @@ class NotificationsController extends StateNotifier<List<AppNotification>> {
           .toList();
       // MERGE, never overwrite. Reading this provider is what constructs the
       // controller, so a notification added by that very first read — e.g. the
-      // Travel Pass season roll, which fires from PlayerController._init — is
+      // Culture Pass season roll, which fires from PlayerController._init — is
       // already in `state` while this load is still in flight. Assigning the
       // saved list straight over it would silently drop the new entry for
       // anyone whose inbox wasn't empty.

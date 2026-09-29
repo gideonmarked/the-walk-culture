@@ -212,7 +212,7 @@ class PlayerController extends StateNotifier<PlayerState> {
     // progress made before this feature existed.
     state = state.copyWith(
         highestTierReached: highestTierIndex(state.lifetimeSteps));
-    // Stamp/roll the Travel Pass season before anything can award XP into it.
+    // Stamp/roll the Culture Pass season before anything can award XP into it.
     // Persist it here: a player who opens the app on rollover day and walks
     // nowhere gets no other save, and the reset would be lost.
     if (_rollSeasonIfNeeded()) await _save();
@@ -462,12 +462,12 @@ class PlayerController extends StateNotifier<PlayerState> {
   bool get freeBoostAvailable => state.freeBoostDay != _todayKey;
 
   /// Use today's free 2x earning boost for [duration]. Once per day: returns
-  /// false (no-op) when it's already been used today. Travel Pass boost
+  /// false (no-op) when it's already been used today. Culture Pass boost
   /// rewards are separate and don't count against it.
   Future<bool> activateBoost({Duration duration = const Duration(hours: 1)}) async {
     if (!freeBoostAvailable) return false;
     final now = DateTime.now();
-    // Extend rather than overwrite, so a Travel Pass boost already running
+    // Extend rather than overwrite, so a Culture Pass boost already running
     // isn't cut short.
     final base = state.boostUntilMs > now.millisecondsSinceEpoch
         ? state.boostUntilMs
@@ -759,7 +759,7 @@ class PlayerController extends StateNotifier<PlayerState> {
   /// case, but the rule is enforced here too so it can't be bypassed.
   Future<bool> buy(ShopItem item) async {
     if (state.owned.contains(item.id)) return false;
-    // Reward-only loot (sphere drops, Travel Pass exclusives) is priced 0, so
+    // Reward-only loot (sphere drops, Culture Pass exclusives) is priced 0, so
     // the tier/price check below would hand it over for nothing. The shop UI
     // already filters these out; this is the rule, not the decoration.
     if (!item.inShop) return false;
@@ -822,7 +822,7 @@ class PlayerController extends StateNotifier<PlayerState> {
     return result;
   }
 
-  // --- Travel Pass (core/travel_pass.dart) ---
+  // --- Culture Pass (core/travel_pass.dart) ---
 
   /// The season the pass is in right now — derived from the clock, never
   /// stored, so it needs no server to stay in step with everyone else.
@@ -865,7 +865,7 @@ class PlayerController extends StateNotifier<PlayerState> {
     if (!firstEver) {
       _notify(
           NotifKind.reward,
-          'A new Travel Pass season',
+          'A new Culture Pass season',
           '${season.name} has begun — $kPassLevelCount fresh levels to walk. '
               '${season.emoji}',
           id: 'pass-season-${season.id}');
@@ -886,7 +886,7 @@ class PlayerController extends StateNotifier<PlayerState> {
     if (after > before) {
       _notify(
           NotifKind.reward,
-          'Travel Pass level $after',
+          'Culture Pass level $after',
           after >= kPassLevelCount
               ? 'You finished ${passSeason.name}. Claim the last of your rewards! 🏁'
               : 'Level $after is yours — a new reward is waiting on the Pass. 🎁',

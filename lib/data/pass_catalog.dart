@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import '../core/travel_pass.dart';
 import '../models/shop_item.dart';
 
-/// The Travel Pass cosmetics — the only place these items ever come from.
+/// The Culture Pass cosmetics — the only place these items ever come from.
 ///
 /// Every one is `inShop: false` (never on the shelves, priced 0 so the
 /// server's purchase_item() can't sell it) AND `passExclusive: true`, which

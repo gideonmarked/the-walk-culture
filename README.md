@@ -40,7 +40,7 @@ lib/
     home/         avatar + goal + pet + wallet + sync/simulate
     quests/       daily step-goal quests → bonus Steps
     achievements/ trophy room (derived milestones)
-    pass/         Travel Pass — seasonal 30-level free/VIP reward track
+    pass/         Culture Pass — seasonal 30-level free/VIP reward track
     shop/         buy cosmetics
     character/    equip wearables + CharacterView
     house/        place home decor in the room

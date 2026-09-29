@@ -84,7 +84,7 @@ the **+500 steps (simulate)** button where noted so you don't have to walk.
 21. Change device date backward → app doesn't grant negative/huge deltas
     (delta clamped at ≥ 0; server-side plausibility caps come in Phase 1).
 
-### F. Travel Pass (doc §12)
+### F. Culture Pass (doc §12)
 Fastest route: dev build, simulate 8,000 steps per level.
 22. Simulate 8,000 → **Pass** tab badges **1**; header reads Level 1 and the
     season's countdown.
@@ -103,7 +103,7 @@ Fastest route: dev build, simulate 8,000 steps per level.
 29. Open Mystery Spheres and every daily practice repeatedly → a pass-exclusive
     cosmetic never drops (they are excluded from the roll pool).
 30. Change the device date forward past the season end → next state change rolls
-    the season: level back to 0, claims cleared, "A new Travel Pass season" in
+    the season: level back to 0, claims cleared, "A new Culture Pass season" in
     the inbox — and items/currency already granted are **still there**.
 
 ### G. Feedback outbox (beta, [`FEATURES.md`](FEATURES.md))
@@ -112,7 +112,7 @@ Steps 31–34 work local-only; step 35 needs a build with the Supabase defines
 31. Settings → **Report a bug or suggest a feature** → expand **What gets
     attached** *before* sending. It lists the 11 build/progress values (App
     version, Platform, OS, Health level, Lifetime Pebbles, Steps today, Streak,
-    Travel Pass, VIP, Health sync, Backend) and **nothing else** — no gratitude
+    Culture Pass, VIP, Health sync, Backend) and **nothing else** — no gratitude
     entry, no prayer text, no account code, no username, and no email unless
     you typed one. App version must match `pubspec.yaml`.
 32. **Airplane mode ON** → type a bug → **Send**. The confirmation says

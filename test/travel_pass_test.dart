@@ -263,7 +263,7 @@ void main() {
       expect(b.player.passLevel, 1);
       final notes = b.container
           .read(notificationsProvider)
-          .where((n) => n.title.contains('Travel Pass level'));
+          .where((n) => n.title.contains('Culture Pass level'));
       expect(notes.length, 1);
       expect(notes.single.title, contains('level 1'));
 
@@ -272,7 +272,7 @@ void main() {
       expect(
           b.container
               .read(notificationsProvider)
-              .where((n) => n.title.contains('Travel Pass level'))
+              .where((n) => n.title.contains('Culture Pass level'))
               .length,
           1);
     });
@@ -478,7 +478,7 @@ void main() {
       expect(
           b.container
               .read(notificationsProvider)
-              .where((n) => n.title.contains('new Travel Pass season'))
+              .where((n) => n.title.contains('new Culture Pass season'))
               .length,
           1);
     });
@@ -500,7 +500,7 @@ void main() {
       expect(
           b.container
               .read(notificationsProvider)
-              .where((n) => n.title.contains('new Travel Pass season')),
+              .where((n) => n.title.contains('new Culture Pass season')),
           isEmpty);
     });
 
@@ -517,7 +517,7 @@ void main() {
       expect(
           b.container
               .read(notificationsProvider)
-              .where((n) => n.title.contains('new Travel Pass season')),
+              .where((n) => n.title.contains('new Culture Pass season')),
           isEmpty);
     });
 
@@ -561,7 +561,7 @@ void main() {
       expect(
           b.container
               .read(notificationsProvider)
-              .where((n) => n.title.contains('new Travel Pass season')),
+              .where((n) => n.title.contains('new Culture Pass season')),
           isEmpty);
     });
 
@@ -618,7 +618,7 @@ void main() {
       addTearDown(b.container.dispose);
 
       final inbox = b.container.read(notificationsProvider);
-      expect(inbox.where((n) => n.title.contains('new Travel Pass season')).length,
+      expect(inbox.where((n) => n.title.contains('new Culture Pass season')).length,
           1);
       expect(inbox.where((n) => n.id == 'older-thing').length, 1,
           reason: 'the merge must not drop the saved history either');

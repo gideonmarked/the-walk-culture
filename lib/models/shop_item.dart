@@ -117,7 +117,7 @@ class ShopItem {
   final bool? stageSpace; // override kStageSlots for one item (wings, aura…)
   final bool inShop;
 
-  /// Only ever granted by the Travel Pass reward track. Random rolls — spheres,
+  /// Only ever granted by the Culture Pass reward track. Random rolls — spheres,
   /// devotion rewards — must skip these (see `kRollableCatalog`), or the pass's
   /// exclusivity is a lie: you could roll a VIP-track item for free.
   final bool passExclusive;
