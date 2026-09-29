@@ -56,22 +56,78 @@ class SocialService {
     if (!_online) return const [];
     try {
       final me = _db.auth.currentUser!.id;
-      final rows = await _db
+      // Edges I initiated (accepted = my confirmed friends; pending = requests
+      // I've sent, awaiting the other side). Two steps rather than an embedded
+      // join, because friendship's FKs point at auth.users, not profile.
+      final edges = await _db
           .from('friendship')
-          .select('friend_id, accepted, profile!friendship_friend_id_fkey(username, account_code)')
+          .select('friend_id, accepted')
           .eq('user_id', me);
-      return [
-        for (final r in rows as List)
-          SocialUser(
-            id: r['friend_id'] as String,
-            username: r['profile']?['username'] as String?,
-            accountCode: r['profile']?['account_code'] as String?,
-            accepted: r['accepted'] as bool? ?? false,
-          ),
-      ];
+      return _hydrate(
+        [for (final e in edges as List) e['friend_id'] as String],
+        edges as List,
+        idKey: 'friend_id',
+      );
     } catch (e) {
       debugPrint('friends() failed: $e');
       return const [];
+    }
+  }
+
+  /// Friend requests waiting on ME (someone added my code; I haven't accepted).
+  Future<List<SocialUser>> incomingRequests() async {
+    if (!_online) return const [];
+    try {
+      final me = _db.auth.currentUser!.id;
+      final edges = await _db
+          .from('friendship')
+          .select('user_id, accepted')
+          .eq('friend_id', me)
+          .eq('accepted', false);
+      return _hydrate(
+        [for (final e in edges as List) e['user_id'] as String],
+        edges as List,
+        idKey: 'user_id',
+      );
+    } catch (e) {
+      debugPrint('incomingRequests() failed: $e');
+      return const [];
+    }
+  }
+
+  /// Look up the profile (username/code) for a set of user ids and pair them
+  /// back up with their friendship edges.
+  Future<List<SocialUser>> _hydrate(List<String> ids, List edges,
+      {required String idKey}) async {
+    if (ids.isEmpty) return const [];
+    final profiles = await _db
+        .from('profile')
+        .select('user_id, username, account_code')
+        .inFilter('user_id', ids);
+    final byId = {
+      for (final p in profiles as List) p['user_id'] as String: p,
+    };
+    return [
+      for (final e in edges)
+        SocialUser(
+          id: e[idKey] as String,
+          username: byId[e[idKey]]?['username'] as String?,
+          accountCode: byId[e[idKey]]?['account_code'] as String?,
+          accepted: e['accepted'] as bool? ?? false,
+        ),
+    ];
+  }
+
+  /// Accept a request from [fromUserId] (mirrors the edge so it's mutual).
+  Future<String?> acceptFriend(String fromUserId) async {
+    if (!_online) return 'Sign in to accept';
+    try {
+      await _db.rpc('accept_friend_request', params: {'p_from': fromUserId});
+      return null;
+    } on PostgrestException catch (e) {
+      return e.message;
+    } catch (e) {
+      return 'Could not accept request';
     }
   }
 

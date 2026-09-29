@@ -138,35 +138,77 @@ purchases.
 ## 4. Public release + IAP — $25 one-time
 
 1. Pay the one-time **$25** Google Play developer registration.
-2. **Sign the app for real.** Right now `android/app/build.gradle.kts` signs
-   release with the *debug* key — Play will reject that.
+2. **Create the upload keystore.** Gradle is already wired for it — you only
+   have to make the key and tell it where the key is.
+
    ```bash
-   keytool -genkey -v -keystore ~/stepquest-upload.jks \
+   keytool -genkeypair -v -keystore ~/the-walk-culture-upload.jks \
      -keyalg RSA -keysize 2048 -validity 10000 -alias upload
    ```
-   Add `android/key.properties` (**git-ignore it**) and point `signingConfigs`
-   at it.
-3. Build an **App Bundle** (Play requires `.aab`, not `.apk`):
+
+   > **Back that `.jks` up somewhere you cannot lose it, and record the
+   > passwords.** It is the single irreplaceable artifact in this app's life:
+   > lose it and you can never publish an update to the same listing again.
+   > (Play App Signing means a lost *upload* key can be reset by Google
+   > support, but only if the listing already exists — before the first upload
+   > there is nothing to reset.)
+
+   Then copy [`android/key.properties.example`](../android/key.properties.example)
+   to `android/key.properties` and fill in the four values. Both that file and
+   `*.jks` are already git-ignored.
+
+   **What the build does with it** (`android/app/build.gradle.kts`):
+
+   | `android/key.properties` | `flutter build apk --release` | `flutter build appbundle --release` |
+   |---|---|---|
+   | present | signed with your upload key | signed with your upload key |
+   | absent | **debug**-signed — installable for testing, not uploadable | **hard fails** |
+
+   The App Bundle deliberately refuses to build without the key. `flutter build`
+   swallows most Gradle output, so a printed warning is too easy to miss — and
+   an `.aab` whose signature you only check at the Play Console is the worst
+   place to find out. A missing property or a mistyped `storeFile` also fails at
+   configure time with a plain-English message rather than a native error.
+
+   **Verify before you upload** — the owner must not say `CN=Android Debug`:
+
+   ```bash
+   keytool -printcert -jarfile build/app/outputs/bundle/release/app-release.aab
+   ```
+
+3. **Bump the version** in `pubspec.yaml` — Play needs a strictly higher
+   `versionCode` on every upload, which comes from the `+N` suffix
+   (`0.1.0+1` → name `0.1.0`, code `1`). Update `kAppVersion` in
+   `lib/core/app_info.dart` to match; a test compares the two and fails if they
+   drift, because a crash or feedback report naming the wrong build is close to
+   useless.
+
+4. Build an **App Bundle** (Play requires `.aab`, not `.apk`):
    ```bash
    flutter build appbundle --release \
      --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...
    ```
-4. Play Console → **Monetize → Products**:
+5. Play Console → **Monetize → Products**:
    - **In-app products** (consumables) for the step packs
    - **Subscriptions** for VIP (add a 7-day free trial on monthly)
 
    The product IDs must match `lib/core/premium.dart` and the `PRODUCTS` map in
    the Edge Function exactly.
-5. Deploy the validator and give it Google credentials:
+6. Deploy the validator and give it Google credentials:
    ```bash
    supabase functions deploy validate-purchase
    supabase secrets set GOOGLE_SERVICE_ACCOUNT_JSON="$(cat service-account.json)"
    ```
    The service account comes from Google Cloud → grant it access in Play Console
    → **Setup → API access**, with the *View financial data* permission.
-6. Replace `SimulatedPurchaseService` with a real `in_app_purchase`
-   implementation that sends `{productId, purchaseToken}` to the Edge Function
-   and only grants when the server says `ok: true`.
+7. ~~Replace `SimulatedPurchaseService`~~ — **already done.**
+   `StorePurchaseService` (`lib/services/store_purchase_service.dart`) is the
+   real `in_app_purchase` path, and `purchaseServiceProvider` hands out the
+   simulator **only** in debug. Note the consequence: `validatePurchase` returns
+   false whenever Supabase isn't ready, so in a release build without a deployed
+   backend **no purchase can be granted at all**. That's the intended fail-safe,
+   but it means steps 3–5 above are prerequisites for testing IAP, not
+   follow-ups.
 
 **Google's cut:** 30% standard, but **15%** under the Play *Small Business
 Program* (under $1M/year — apply, it's free), and 15% on subscriptions after a

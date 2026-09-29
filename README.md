@@ -19,6 +19,7 @@ clean and all tests pass.**
 | [`docs/BACKEND.md`](docs/BACKEND.md) | Phase 1 server setup + provider choice (Supabase vs Firebase) |
 | [`docs/ANDROID.md`](docs/ANDROID.md) | Android setup & run (**primary target**) |
 | [`docs/IOS.md`](docs/IOS.md) | iOS setup & run (Mac only, deferred) |
+| [`docs/ART_MANIFEST.md`](docs/ART_MANIFEST.md) | **generated** — every sprite to draw, by filename, with progress |
 | [`docs/TESTING.md`](docs/TESTING.md) | automated + manual test plan (Android-first) |
 
 ---
@@ -34,16 +35,18 @@ lib/
   services/health_service.dart  passive step read (doc §2.4 Layer 1)
   state/app_providers.dart      PlayerController + OnboardingController
   features/
-    shell/        bottom-nav host (Home·Quests·Shop·Character·House)
+    shell/        bottom-nav host (Home·Quests·Pass·Shop·Profile)
     onboarding/   consent-first health opt-in (doc §3.6)
     home/         avatar + goal + pet + wallet + sync/simulate
     quests/       daily step-goal quests → bonus Steps
     achievements/ trophy room (derived milestones)
+    pass/         Travel Pass — seasonal 30-level free/VIP reward track
     shop/         buy cosmetics
     character/    equip wearables + CharacterView
     house/        place home decor in the room
     wallet/       tier balances strip
     settings/     daily goal · privacy · reset (via Home app bar)
+    feedback/     report a bug / suggest a feature — offline-first outbox
 test/                           currency, streak, controller, widget-smoke tests
 platform_config/                native config snippets (merged into android/)
 setup.sh / setup.ps1            one-shot native bootstrap
@@ -114,7 +117,7 @@ exercise the full earn → shop → equip loop.
 | 1 MVP | next | server-authoritative currency (Firebase/Supabase), auth, anti-cheat v1 |
 | 3 Growth | | friends, leaderboards, seasons |
 | 4 TURBO | | live GPS session: distance, route, pace (the only GPS release) |
-| 5 Scale | | guilds, cosmetic pass, prestige tiers |
+| 5 Scale | | guilds, prestige tiers *(cosmetic pass: built)* |
 
 > `health` API note: pinned to `^13.3.1`. If a method signature differs on the
 > version you resolve (e.g. `configure()` / `requestAuthorization`), adjust

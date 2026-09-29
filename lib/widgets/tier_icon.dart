@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Per-tier colours for the currency footprint icon (doc §5 ladder).
+/// Per-tier colours for the currency pebble icon (doc §5 ladder).
 const Map<String, Color> kTierColors = {
   'Pebbles': Color(0xFF9E9E9E), // stone grey
   'Copper': Color(0xFFB87333),
@@ -14,9 +14,10 @@ const Map<String, Color> kTierColors = {
   'Diamond': Color(0xFFB9F2FF),
 };
 
-/// A footprint (sole + toes) tinted with the tier's colour. Drawn with a
-/// CustomPainter so it can be recoloured per tier (emoji can't be tinted). A
-/// faint dark outline keeps the white "Steps" print legible on light surfaces.
+/// A smooth pebble (rounded stone) tinted with the tier's colour. Drawn with a
+/// CustomPainter so it can be recoloured per tier (emoji can't be tinted): grey
+/// reads as a plain pebble at the base, the jewel colours as polished stones up
+/// the ladder. A glossy highlight + soft outline give it a little dimension.
 class TierIcon extends StatelessWidget {
   const TierIcon(this.tier, {super.key, this.size = 28});
 
@@ -29,53 +30,65 @@ class TierIcon extends StatelessWidget {
       width: size,
       height: size,
       child: CustomPaint(
-        painter: _FootprintPainter(kTierColors[tier] ?? Colors.grey),
+        painter: _PebblePainter(kTierColors[tier] ?? Colors.grey),
       ),
     );
   }
 }
 
-class _FootprintPainter extends CustomPainter {
-  _FootprintPainter(this.color);
+class _PebblePainter extends CustomPainter {
+  _PebblePainter(this.color);
   final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width, h = size.height;
+
+    // Organic stone silhouette — a touch wider at the bottom so it sits like a
+    // pebble rather than a coin. Centre biased slightly low.
+    final cx = w * 0.5, cy = h * 0.53;
+    final rx = w * 0.38, ry = h * 0.34;
+    final body = Path()
+      ..moveTo(cx, cy - ry)
+      ..cubicTo(cx + rx * 0.92, cy - ry, cx + rx, cy - ry * 0.15,
+          cx + rx, cy + ry * 0.28)
+      ..cubicTo(cx + rx, cy + ry * 0.82, cx + rx * 0.58, cy + ry, cx, cy + ry)
+      ..cubicTo(cx - rx * 0.58, cy + ry, cx - rx, cy + ry * 0.82,
+          cx - rx, cy + ry * 0.28)
+      ..cubicTo(cx - rx, cy - ry * 0.15, cx - rx * 0.92, cy - ry, cx, cy - ry)
+      ..close();
+
     final fill = Paint()
       ..color = color
       ..style = PaintingStyle.fill
       ..isAntiAlias = true;
     final stroke = Paint()
-      ..color = Colors.black.withValues(alpha: 0.4)
+      ..color = Colors.black.withValues(alpha: 0.35)
       ..style = PaintingStyle.stroke
       ..strokeWidth = w * 0.035
       ..isAntiAlias = true;
 
-    // Ball of the foot (main pad).
-    final ball = Rect.fromLTWH(w * 0.30, h * 0.30, w * 0.44, h * 0.40);
-    // Heel.
-    final heel = Rect.fromLTWH(w * 0.37, h * 0.66, w * 0.30, h * 0.26);
-    canvas.drawOval(ball, fill);
-    canvas.drawOval(heel, fill);
-    canvas.drawOval(ball, stroke);
-    canvas.drawOval(heel, stroke);
+    canvas.drawPath(body, fill);
 
-    // Toes arcing above the ball.
-    final toeR = w * 0.072;
-    const toes = [
-      Offset(0.35, 0.26),
-      Offset(0.47, 0.19),
-      Offset(0.59, 0.19),
-      Offset(0.70, 0.26),
-    ];
-    for (final t in toes) {
-      final c = Offset(t.dx * w, t.dy * h);
-      canvas.drawCircle(c, toeR, fill);
-      canvas.drawCircle(c, toeR, stroke);
-    }
+    // Glossy highlight, clipped to the stone so it never spills past the edge.
+    canvas.save();
+    canvas.clipPath(body);
+    final highlight = Paint()
+      ..color = Colors.white.withValues(alpha: 0.4)
+      ..isAntiAlias = true;
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(cx - rx * 0.28, cy - ry * 0.38),
+        width: rx * 0.9,
+        height: ry * 0.55,
+      ),
+      highlight,
+    );
+    canvas.restore();
+
+    canvas.drawPath(body, stroke);
   }
 
   @override
-  bool shouldRepaint(_FootprintPainter old) => old.color != color;
+  bool shouldRepaint(_PebblePainter old) => old.color != color;
 }

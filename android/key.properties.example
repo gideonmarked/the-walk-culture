@@ -1,0 +1,16 @@
+# Copy to android/key.properties and fill in. That file is git-ignored — the
+# keystore and these passwords must never be committed.
+#
+# Create the keystore first (once, ever — see docs/DEPLOY.md §4):
+#
+#   keytool -genkey -v -keystore ~/the-walk-culture-upload.jks \
+#     -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+#
+# BACK THE .jks FILE UP SOMEWHERE YOU WON'T LOSE IT. Lose it and you can never
+# publish an update to this app under the same listing again.
+
+# Absolute path is safest. A relative path resolves against android/.
+storeFile=/home/you/the-walk-culture-upload.jks
+storePassword=
+keyAlias=upload
+keyPassword=
