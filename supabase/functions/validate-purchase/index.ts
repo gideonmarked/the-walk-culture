@@ -9,6 +9,11 @@
 // purchase token is the only thing Google will vouch for, and grant_purchase()
 // keys off it uniquely so a replayed token cannot pay out twice.
 //
+// Responses the app relies on (lib/services/cloud/cloud_sync_service.dart):
+//   200 {ok: true, vipUntil?}  granted (or already granted) — finish the purchase
+//   4xx                        permanently refused — finish it, grant nothing
+//   5xx                        couldn't decide — leave it open, retry later
+//
 // Deploy:  supabase functions deploy validate-purchase
 // Secrets: supabase secrets set GOOGLE_SERVICE_ACCOUNT_JSON='{...}'
 //
@@ -29,6 +34,20 @@ const PRODUCTS: Record<string, { steps?: number; vipDays?: number }> = {
 };
 
 const PACKAGE_NAME = 'com.perfeos.step_quest';
+
+// Play purchase tokens are URL-safe base64-ish strings. Anything else is
+// refused before it gets near a URL: a token like "x/../../<other product>/
+// tokens/T" would otherwise have fetch() normalise the path and verify a
+// different purchase, while the raw string dodges the unique-token replay
+// guard (every new spelling of the same token looks unused).
+const TOKEN_PATTERN = /^[A-Za-z0-9._-]{16,4096}$/;
+
+/** Google answered, and the answer is final. */
+type Verdict =
+  | { valid: false }
+  | { valid: true; vipUntil?: string };
+
+class RetryableError extends Error {}
 
 /** Mint a Google OAuth access token from the service-account key (JWT grant). */
 async function googleAccessToken(): Promise<string> {
@@ -84,22 +103,34 @@ async function verifyWithGoogle(
   productId: string,
   token: string,
   isSubscription: boolean,
-): Promise<boolean> {
+): Promise<Verdict> {
   const access = await googleAccessToken();
   const kind = isSubscription ? 'subscriptions' : 'products';
   const url =
     `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/` +
-    `${PACKAGE_NAME}/purchases/${kind}/${productId}/tokens/${token}`;
+    `${PACKAGE_NAME}/purchases/${kind}/${encodeURIComponent(productId)}` +
+    `/tokens/${encodeURIComponent(token)}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${access}` } });
-  if (!res.ok) return false;
+  // 5xx / rate limits are Google being unavailable, not a verdict.
+  if (res.status >= 500 || res.status === 429) {
+    throw new RetryableError(`google ${res.status}: ${await res.text()}`);
+  }
+  if (!res.ok) return { valid: false };
   const data = await res.json();
 
   if (isSubscription) {
-    // Still inside the paid window?
-    return Number(data.expiryTimeMillis ?? 0) > Date.now();
+    // Still inside the paid window? The expiry Google reports IS the
+    // entitlement: it moves forward on each renewal under the same token.
+    const expiry = Number(data.expiryTimeMillis ?? 0);
+    if (!(expiry > Date.now())) return { valid: false };
+    return { valid: true, vipUntil: new Date(expiry).toISOString() };
+  }
+  // Belt and braces: the purchase Google describes must be the one we price.
+  if (data.productId != null && data.productId !== productId) {
+    return { valid: false };
   }
   // purchaseState: 0 = purchased. Anything else (cancelled/pending) is a no.
-  return data.purchaseState === 0;
+  return data.purchaseState === 0 ? { valid: true } : { valid: false };
 }
 
 Deno.serve(async (req) => {
@@ -118,13 +149,17 @@ Deno.serve(async (req) => {
     if (!user) return new Response('unauthorized', { status: 401 });
 
     const { productId, purchaseToken } = await req.json();
-    const grant = PRODUCTS[productId];
-    if (!grant || !purchaseToken) {
+    const grant = Object.hasOwn(PRODUCTS, productId) ? PRODUCTS[productId] : undefined;
+    if (!grant) {
       return new Response('unknown product', { status: 400 });
+    }
+    if (typeof purchaseToken !== 'string' || !TOKEN_PATTERN.test(purchaseToken)) {
+      return new Response('malformed purchase token', { status: 400 });
     }
 
     const isSub = (grant.vipDays ?? 0) > 0;
-    if (!(await verifyWithGoogle(productId, purchaseToken, isSub))) {
+    const verdict = await verifyWithGoogle(productId, purchaseToken, isSub);
+    if (!verdict.valid) {
       return new Response(JSON.stringify({ ok: false, reason: 'invalid receipt' }), {
         status: 402,
         headers: { 'Content-Type': 'application/json' },
@@ -142,11 +177,21 @@ Deno.serve(async (req) => {
       p_product_id: productId,
       p_purchase_token: purchaseToken,
       p_steps: grant.steps ?? 0,
-      p_vip_days: grant.vipDays ?? 0,
+      p_vip_until: verdict.vipUntil ?? null,
     });
-    if (error) throw error;
+    if (error) {
+      // A token already redeemed by another account is a final no, not a
+      // server fault — don't make that client retry it forever.
+      if (String(error.message).includes('belongs to another account')) {
+        return new Response(JSON.stringify({ ok: false, reason: 'token already used' }), {
+          status: 409,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      throw error;
+    }
 
-    return new Response(JSON.stringify({ ok: true }), {
+    return new Response(JSON.stringify({ ok: true, vipUntil: verdict.vipUntil ?? null }), {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (e) {

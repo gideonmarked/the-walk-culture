@@ -77,13 +77,35 @@ create table if not exists profile (
   health_level int not null default 3,   -- index into kHealthLevels (Steady)
   streak_current int default 0,
   streak_best int default 0,
-  -- Whole-PlayerState cloud save, so progress survives reinstall / new device.
-  -- NOTE: client-authored, therefore NOT anti-cheat. It's a backup, not a
-  -- ledger. When the wallet migrates to being server-authoritative, credits
-  -- move to credit_steps() and this blob drops back to cosmetic prefs only.
-  save_blob jsonb,
   updated_at timestamptz not null default now()
 );
+
+-- Whole-PlayerState cloud save, so progress survives reinstall / new device.
+-- Its own table, readable only by its owner: `profile` rows are readable by
+-- everyone for friend discovery (social.sql), and RLS cannot hide one column.
+-- NOTE: client-authored, therefore NOT anti-cheat. It's a backup, not a
+-- ledger. When the wallet migrates to being server-authoritative, credits
+-- move to credit_steps() and this blob drops back to cosmetic prefs only.
+create table if not exists player_save (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  save_blob jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+-- Migration: the save used to be profile.save_blob, which exposed every
+-- player's full save to anyone with the anon key. Move it, then drop it.
+do $$
+begin
+  if exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'profile'
+               and column_name = 'save_blob') then
+    insert into player_save(user_id, save_blob, updated_at)
+      select user_id, save_blob, updated_at from profile
+      where save_blob is not null
+      on conflict (user_id) do nothing;
+    alter table profile drop column save_blob;
+  end if;
+end $$;
 
 -- ---- Monetization -----------------------------------------------------------
 
@@ -138,6 +160,7 @@ create table if not exists turbo_session (
 alter table wallet      enable row level security;
 alter table inventory   enable row level security;
 alter table profile     enable row level security;
+alter table player_save enable row level security;
 alter table step_ledger enable row level security;
 alter table entitlement enable row level security;
 alter table purchase_receipt enable row level security;
@@ -156,6 +179,10 @@ create policy "read own ledger" on step_ledger for select using (auth.uid() = us
 
 drop policy if exists "rw own profile" on profile;
 create policy "rw own profile" on profile for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "rw own save" on player_save;
+create policy "rw own save" on player_save for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- Entitlements + receipts + ad rewards are READ-ONLY to the client. No insert
@@ -181,23 +208,44 @@ create policy "read own turbo" on turbo_session for select using (auth.uid() = u
 
 -- ---------------------------------------------------------------------------
 -- Validated step crediting (anti-cheat, doc §4.1). Caps implausible deltas.
+--
+-- The cap scales with the window, so the window itself cannot be taken on the
+-- client's word: a window "starting ten years ago" would lift the cap to ~1e9.
+-- It is clamped to real time instead — it can't end in the future, can't start
+-- more than a day back, and can't reach back over time an earlier call
+-- already credited. Replaying or overlapping windows therefore credit nothing.
 -- ---------------------------------------------------------------------------
 create or replace function credit_steps(
   p_delta int, p_window_start timestamptz, p_window_end timestamptz, p_source text
 ) returns bigint
-language plpgsql security definer as $$
+language plpgsql security definer set search_path = public as $$
 declare
   v_user uuid := auth.uid();
-  v_hours numeric := greatest(extract(epoch from (p_window_end - p_window_start)) / 3600.0, 0.001);
-  v_cap int := ceil(v_hours * 12000);       -- ~12k steps/hour ceiling
-  v_credit int := least(greatest(p_delta, 0), v_cap);
-  v_flagged boolean := p_delta > v_cap;
+  v_last_end timestamptz;
+  v_start timestamptz;
+  v_end timestamptz := least(p_window_end, now());
+  v_hours numeric;
+  v_cap int;
+  v_credit int;
+  v_flagged boolean;
   v_new bigint;
 begin
   if v_user is null then raise exception 'not authenticated'; end if;
   insert into wallet(user_id) values (v_user) on conflict (user_id) do nothing;
+  -- Serialise this user's credits so two concurrent calls can't both claim
+  -- the same stretch of time.
+  perform 1 from wallet where user_id = v_user for update;
+
+  select max(window_end) into v_last_end from step_ledger where user_id = v_user;
+  v_start := greatest(p_window_start, now() - interval '1 day',
+                      coalesce(v_last_end, '-infinity'::timestamptz));
+  v_hours := greatest(extract(epoch from (v_end - v_start)) / 3600.0, 0);
+  v_cap := floor(v_hours * 12000);          -- ~12k steps/hour ceiling
+  v_credit := least(greatest(p_delta, 0), v_cap);
+  v_flagged := p_delta > v_cap;
+
   insert into step_ledger(user_id, window_start, window_end, source, delta_steps, credited_steps, flagged)
-    values (v_user, p_window_start, p_window_end, p_source, p_delta, v_credit, v_flagged);
+    values (v_user, v_start, greatest(v_end, v_start), p_source, p_delta, v_credit, v_flagged);
   update wallet set total_steps_lifetime = total_steps_lifetime + v_credit, updated_at = now()
     where user_id = v_user
     returning total_steps_lifetime into v_new;
@@ -221,6 +269,11 @@ declare
   v_spendable bigint;
 begin
   if v_user is null then raise exception 'not authenticated'; end if;
+  -- Checked before the debit: a retry or double tap on an owned item must not
+  -- charge again for nothing.
+  if exists (select 1 from inventory where user_id = v_user and item_id = p_item_id) then
+    raise exception 'already owned';
+  end if;
 
   select price_tier, in_shop, (price_amount)::bigint * steps_per_unit(price_tier)
     into v_tier, v_in_shop, v_price
@@ -286,42 +339,55 @@ end; $$;
 -- ---------------------------------------------------------------------------
 -- Real-money grant. Called ONLY by the validate-purchase Edge Function using
 -- the service-role key, never by the client — hence the REVOKE below.
--- Idempotent: the unique purchase_token makes a replayed receipt a no-op.
+--
+-- Currency packs: idempotent on the unique purchase_token, so a replayed
+-- receipt is a no-op.
+-- VIP: Google keeps ONE purchase token across every auto-renewal, so a token
+-- can't mean "already granted" for a subscription. Instead the Edge Function
+-- passes the expiry Google reports (p_vip_until) and VIP is SET to it, never
+-- stacked. Re-validating the same token is then harmless, and a renewal moves
+-- the expiry forward.
+-- Either way a token stays bound to the account that first redeemed it.
 -- ---------------------------------------------------------------------------
+drop function if exists grant_purchase(uuid, text, text, text, bigint, int);
 create or replace function grant_purchase(
   p_user uuid, p_platform text, p_product_id text, p_purchase_token text,
-  p_steps bigint default 0, p_vip_days int default 0
+  p_steps bigint default 0, p_vip_until timestamptz default null
 ) returns void
-language plpgsql security definer as $$
+language plpgsql security definer set search_path = public as $$
 declare
+  v_owner uuid;
   v_inserted int;
 begin
+  select user_id into v_owner from purchase_receipt
+    where purchase_token = p_purchase_token;
+  if v_owner is not null and v_owner <> p_user then
+    raise exception 'purchase token belongs to another account';
+  end if;
+
   insert into purchase_receipt(user_id, platform, product_id, purchase_token,
                                granted_steps, granted_vip_days)
-    values (p_user, p_platform, p_product_id, p_purchase_token, p_steps, p_vip_days)
+    values (p_user, p_platform, p_product_id, p_purchase_token, p_steps, 0)
     on conflict (purchase_token) do nothing;
-
   get diagnostics v_inserted = row_count;
-  if v_inserted = 0 then return; end if;   -- replayed receipt: already granted
 
-  if p_steps > 0 then
+  if p_steps > 0 and v_inserted > 0 then   -- a replayed pack pays nothing
     insert into wallet(user_id) values (p_user) on conflict (user_id) do nothing;
     update wallet set total_steps_lifetime = total_steps_lifetime + p_steps,
                       updated_at = now()
       where user_id = p_user;
   end if;
 
-  if p_vip_days > 0 then
+  if p_vip_until is not null then
     insert into entitlement(user_id, vip_until)
-      values (p_user, now() + (p_vip_days || ' days')::interval)
+      values (p_user, p_vip_until)
       on conflict (user_id) do update set
-        -- Stack renewals onto the remaining window rather than resetting it.
-        vip_until = greatest(coalesce(entitlement.vip_until, now()), now())
-                    + (p_vip_days || ' days')::interval,
+        -- Another, longer subscription on the same account keeps its window.
+        vip_until = greatest(coalesce(entitlement.vip_until, p_vip_until), p_vip_until),
         updated_at = now();
   end if;
 end; $$;
 
 -- The client must never be able to mint money.
-revoke all on function grant_purchase(uuid, text, text, text, bigint, int)
+revoke all on function grant_purchase(uuid, text, text, text, bigint, timestamptz)
   from public, anon, authenticated;
