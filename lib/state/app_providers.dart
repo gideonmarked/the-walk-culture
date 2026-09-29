@@ -763,6 +763,11 @@ class PlayerController extends StateNotifier<PlayerState> {
     // the tier/price check below would hand it over for nothing. The shop UI
     // already filters these out; this is the rule, not the decoration.
     if (!item.inShop) return false;
+    // VIP-store stock (pets) is for VIPs only. The shelf hides it from everyone
+    // else; this is the rule behind that.
+    if (item.vipStoreOnly && !_ref.read(premiumControllerProvider).isVip) {
+      return false;
+    }
     if (!item.purchasable(state.spendableSteps)) return false;
     state = state.copyWith(
       spentSteps: state.spentSteps + item.costInSteps,

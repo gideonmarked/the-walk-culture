@@ -139,6 +139,11 @@ class ShopItem {
     this.passExclusive = false,
   });
 
+  /// Sold only in the VIP store: shown on the shelves and buyable only while
+  /// VIP. For now that means every pet sold in the shop; later only pet skins
+  /// will be sold, and pets themselves will come from the pass.
+  bool get vipStoreOnly => inShop && slot == ItemSlot.pet;
+
   /// Path to the sprite. Replace the file to swap in real art.
   String get asset => 'assets/${slot.assetFolder}/$id.png';
 

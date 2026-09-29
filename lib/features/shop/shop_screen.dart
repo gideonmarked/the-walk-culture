@@ -6,6 +6,7 @@ import '../../core/currency.dart';
 import '../../data/shop_catalog.dart';
 import '../../models/shop_item.dart';
 import '../../state/app_providers.dart';
+import '../../state/premium_providers.dart';
 import '../../widgets/sprite_thumb.dart';
 import '../../widgets/tier_icon.dart' show kTierColors;
 import '../spheres/spheres_screen.dart' show kRarityColor, rarityLabel;
@@ -49,7 +50,12 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
     final controller = ref.read(playerControllerProvider.notifier);
     final fmt = NumberFormat.decimalPattern();
 
-    final all = kShopCatalog.where((i) => i.inShop).toList();
+    final isVip = ref.watch(premiumControllerProvider).isVip;
+
+    // Pets are VIP-store stock: off the shelves entirely unless you're VIP.
+    final all = kShopCatalog
+        .where((i) => i.inShop && (!i.vipStoreOnly || isVip))
+        .toList();
     final categories =
         _shopCategoryOrder.where((s) => all.any((i) => i.slot == s)).toList();
     final items =
@@ -73,7 +79,7 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
                 ),
                 for (final slot in categories)
                   _CategoryChip(
-                    label: slot.label,
+                    label: slot == ItemSlot.pet ? '👑 VIP Pets' : slot.label,
                     selected: _filter == slot,
                     onTap: () => setState(() => _filter = slot),
                   ),
@@ -106,6 +112,11 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
                     subtitle: Text.rich(
                       TextSpan(
                         children: [
+                          if (item.vipStoreOnly)
+                            const TextSpan(
+                              text: '👑 VIP · ',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
                           TextSpan(text: '${item.slot.label} · '),
                           TextSpan(
                             text: rarityLabel(item.rarity),
