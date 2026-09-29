@@ -110,7 +110,10 @@ android {
 // unuploadable at the Play Console does not.
 gradle.taskGraph.whenReady {
     if (!hasUploadKey &&
-        allTasks.any { it.name.startsWith("bundle") && it.name.contains("Release") }
+        // Match the app's own bundle task by path. A name match ("bundle" +
+        // "Release") also hits every plugin module's bundleLib*Release task,
+        // which run for APK builds too, and so blocked `apk --release`.
+        allTasks.any { it.path == ":app:bundleRelease" }
     ) {
         throw GradleException(
             "Cannot build a release App Bundle without an upload key: " +
