@@ -33,7 +33,7 @@ void main() {
     final container = await _pumpPass(tester);
     final season = container.read(playerControllerProvider.notifier).passSeason;
 
-    expect(find.text('Travel Pass'), findsOneWidget); // app bar
+    expect(find.text('Culture Pass'), findsOneWidget); // app bar
     expect(find.text(season.name), findsOneWidget);
     expect(find.text('Level 0'), findsOneWidget);
     expect(find.text(' / $kPassLevelCount'), findsOneWidget);

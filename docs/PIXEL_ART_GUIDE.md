@@ -344,7 +344,7 @@ Workflow for "N styles × M colours":
 
 > **Every sprite, by name:** [`ART_MANIFEST.md`](ART_MANIFEST.md) is generated
 > from the catalog and lists each file to be drawn, its canvas, and whether it
-> exists yet — including the Travel Pass exclusives, which this guide predates.
+> exists yet — including the Culture Pass exclusives, which this guide predates.
 > Regenerate it with `dart run tool/art_manifest.dart > docs/ART_MANIFEST.md`.
 > The section below is the *shape* of the priority order; the manifest is the
 > checklist.

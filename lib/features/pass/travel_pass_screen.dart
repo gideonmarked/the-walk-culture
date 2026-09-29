@@ -9,7 +9,7 @@ import '../../state/premium_providers.dart';
 import '../../widgets/sprite_thumb.dart';
 import '../store/store_screen.dart';
 
-/// The Travel Pass: one 30-rung ladder, two columns. Free on the left, VIP on
+/// The Culture Pass: one 30-rung ladder, two columns. Free on the left, VIP on
 /// the right. The header stays put while the ladder scrolls, so your level and
 /// the season clock are always on screen.
 class TravelPassScreen extends ConsumerStatefulWidget {
@@ -123,7 +123,7 @@ class _TravelPassScreenState extends ConsumerState<TravelPassScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Travel Pass'),
+        title: const Text('Culture Pass'),
         actions: [
           if (!isVip)
             IconButton(

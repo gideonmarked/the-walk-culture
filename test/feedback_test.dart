@@ -210,7 +210,7 @@ void main() {
       final d = b.feedback.currentDiagnostics;
 
       expect(d['App version'], kAppVersion);
-      expect(d['Travel Pass'], contains('level 1'));
+      expect(d['Culture Pass'], contains('level 1'));
       expect(d['VIP'], 'no');
       expect(d['Steps today'], '9000');
       expect(d['Backend'], 'offline');

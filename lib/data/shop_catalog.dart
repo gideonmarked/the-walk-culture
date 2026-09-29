@@ -268,7 +268,7 @@ const List<ShopItem> _kPrestige = [
 
 /// Every cosmetic in the game: hand-authored seed first (curated items lead),
 /// then the generated colour variants, the prestige line above Gold, and the
-/// Travel Pass exclusives. Computed once.
+/// Culture Pass exclusives. Computed once.
 ///
 /// Pass items live here so Collection, the character compositor, and equip all
 /// find them by id — they're just filtered out of the shop shelves (`inShop`)
@@ -281,7 +281,7 @@ final List<ShopItem> kShopCatalog = [
 ];
 
 /// The pool a random reward may draw from — spheres, and the daily Bible /
-/// prayer / gratitude rolls. Excludes Travel Pass exclusives: those are earned
+/// prayer / gratitude rolls. Excludes Culture Pass exclusives: those are earned
 /// on the track (the VIP half by subscribing), so a lucky sphere must never
 /// hand one over. Everything else, including reward-only drops like the Baby
 /// Dragon, stays rollable.

@@ -102,7 +102,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('App version'), findsOneWidget);
-    expect(find.text('Travel Pass'), findsOneWidget);
+    expect(find.text('Culture Pass'), findsOneWidget);
     expect(find.text('Health sync'), findsOneWidget);
   });
 

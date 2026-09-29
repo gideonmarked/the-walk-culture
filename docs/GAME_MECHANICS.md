@@ -127,7 +127,7 @@ A **prestige line** sits above Gold (Titanium → Diamond) — aspirational flex
 items. Most of the catalogue is generated as colour variants (a colour implies a
 rarity: plainer = common, "Golden" = the epic of its set). Reward-only sphere
 loot exists in the catalogue but is `in_shop = false` (never purchasable), and so
-do the 17 Travel Pass exclusives (§12).
+do the 17 Culture Pass exclusives (§12).
 
 ## 8. Earning boost
 
@@ -195,7 +195,7 @@ A separate, deliberately-consented, **anonymous** wall (needs the backend live):
   serve test ads. Purchases validated **server-side** (receipt → Edge Function →
   grant); release never uses the simulator.
 
-## 12. Travel Pass
+## 12. Culture Pass
 
 A **seasonal reward track** — 30 levels, two columns. Everyone climbs the same
 ladder by walking; VIP unlocks the second column of rewards on it. Season maths,
@@ -320,7 +320,7 @@ Sources today:
 | Kind | Fires when |
 |---|---|
 | Reward | you bank into a new currency tier |
-| Reward | you reach a new **Travel Pass** level — or finish the track (§12) |
+| Reward | you reach a new **Culture Pass** level — or finish the track (§12) |
 | Reward | a new pass season begins, i.e. the old track has just rolled over |
 | Health | yesterday's steps climb or slip your level (once/day) |
 | Devotion | a new day's practices are ready (once/day) |
@@ -352,6 +352,6 @@ later phase. A dev-only "send test notification" action lives in the inbox when
    journal.
 4. **Published odds.** Any randomised reward shows its drop rates.
 5. **No paid random boxes.** Real-money spheres have guaranteed contents, and
-   the Travel Pass is named end to end — no boxes on either column (§12).
+   the Culture Pass is named end to end — no boxes on either column (§12).
 6. **Devotion rewards stay gentle.** Spiritual practices never become the fastest
    or only path to the best gear.

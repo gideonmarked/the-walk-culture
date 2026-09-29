@@ -91,7 +91,7 @@ class FeedbackController extends StateNotifier<List<FeedbackReport>> {
       'Lifetime Pebbles': '${player.lifetimeSteps}',
       'Steps today': '${player.todaySteps}',
       'Streak': '${player.streakCurrent} days',
-      'Travel Pass': 'level $passLevel of $kPassLevelCount',
+      'Culture Pass': 'level $passLevel of $kPassLevelCount',
       'VIP': premium.isVip ? 'active' : 'no',
       'Health sync': _ref.read(healthSyncProvider) ? 'on' : 'off',
       'Backend': _ref.read(cloudSyncProvider).isReady ? 'connected' : 'offline',

@@ -10,7 +10,7 @@
 //
 // Regenerate after any change to the catalog. A hand-written list goes stale
 // the first time a cosmetic is added — which already happened once, when the
-// 17 Travel Pass items landed and no art doc mentioned them.
+// 17 Culture Pass items landed and no art doc mentioned them.
 
 import 'dart:io';
 
@@ -150,7 +150,7 @@ void main(List<String> args) {
         'the only things a new player can afford, because the shop gates on '
         'banked wallet tier. If a tester quits in week one, this is all they '
         'ever saw.',
-    '**P2 — Travel Pass (${pass.length}).** Seasonal track exclusives — '
+    '**P2 — Culture Pass (${pass.length}).** Seasonal track exclusives — '
         '${pass.where((i) => !i.id.startsWith('pass_vip_')).length} free, '
         '${pass.where((i) => i.id.startsWith('pass_vip_')).length} VIP-only. '
         'The VIP dozen is the thing a subscription actually buys, so an emoji '
@@ -197,7 +197,7 @@ void main(List<String> args) {
       blurb: 'Priced in Pebbles and Copper, so they are on the shelves from '
           'day one. Draw these before anything rarer.');
 
-  w.h2('P2 — Travel Pass exclusives');
+  w.h2('P2 — Culture Pass exclusives');
   itemTable(
       'Free track',
       pass.where((i) => !i.id.startsWith('pass_vip_')).toList(),

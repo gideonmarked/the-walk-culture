@@ -42,7 +42,7 @@
 
 - **P0 — Skin tones (5).** 5 of 5 done. Everything else is drawn on top of these, so they come first.
 - **P1 — First week (32).** Common and Uncommon cosmetics: the only things a new player can afford, because the shop gates on banked wallet tier. If a tester quits in week one, this is all they ever saw.
-- **P2 — Travel Pass (17).** Seasonal track exclusives — 5 free, 12 VIP-only. The VIP dozen is the thing a subscription actually buys, so an emoji placeholder there is the most expensive placeholder in the app.
+- **P2 — Culture Pass (17).** Seasonal track exclusives — 5 free, 12 VIP-only. The VIP dozen is the thing a subscription actually buys, so an emoji placeholder there is the most expensive placeholder in the app.
 - **P3 — Generated shapes (50 → 500 files).** One drawing each, palette-swapped into 10 colours. Cheapest coverage per hour of work by a wide margin.
 - **P4 — Rare and prestige (38).** Rare through Celestial. Aspirational flex items nobody sees for weeks.
 
@@ -158,7 +158,7 @@ Priced in Pebbles and Copper, so they are on the shelves from day one. Draw thes
 
 ---
 
-## P2 — Travel Pass exclusives
+## P2 — Culture Pass exclusives
 
 
 ### Free track — 0/5

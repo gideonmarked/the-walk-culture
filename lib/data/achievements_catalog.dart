@@ -10,7 +10,7 @@ final int _stepSphereCount =
 
 /// Ids of everything actually purchasable. The Collector trophy counts against
 /// this set rather than `owned.length`, or the 25 reward-only items (sphere
-/// loot, Travel Pass exclusives) would each buy a free pass on the real thing.
+/// loot, Culture Pass exclusives) would each buy a free pass on the real thing.
 final Set<String> _shopItemIds = {
   for (final i in kShopCatalog)
     if (i.inShop) i.id,

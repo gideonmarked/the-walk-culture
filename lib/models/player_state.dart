@@ -75,7 +75,7 @@ class PlayerState {
   final String requestPrayerRewardDate;
   final int requestPrayersRewardedToday;
 
-  // Travel Pass (core/travel_pass.dart). `passSeasonId` is the season the XP
+  // Culture Pass (core/travel_pass.dart). `passSeasonId` is the season the XP
   // and claims below belong to; when the derived season no longer matches, the
   // track has rolled over and all three reset. Claim sets hold level numbers as
   // strings ('7'), one set per track — the VIP set can only grow while the
@@ -267,7 +267,7 @@ class PlayerState {
           (json['requestPrayerRewardDate'] as String?) ?? '',
       requestPrayersRewardedToday:
           (json['requestPrayersRewardedToday'] as num?)?.toInt() ?? 0,
-      // Saves written before the Travel Pass existed carry no season, so they
+      // Saves written before the Culture Pass existed carry no season, so they
       // land on '' and the first season roll picks them up as a new player.
       passSeasonId: (json['passSeasonId'] as String?) ?? '',
       passXp: (json['passXp'] as num?)?.toInt() ?? 0,
