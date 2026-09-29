@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Step Quest</string>
+	<string>The Walk Culture</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -66,5 +66,17 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- AdMob: the SDK aborts at launch without an app id. This is Google's
+	     sample iOS app id (serves test ads only). Register the iOS app in
+	     AdMob and replace it before an iOS release. -->
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<!-- iOS kills the app on first HealthKit / CMPedometer access without these. -->
+	<key>NSHealthShareUsageDescription</key>
+	<string>The Walk Culture reads your step count to turn your walking into in-game currency.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>The Walk Culture does not write to Apple Health; iOS requires this text whenever step data is requested.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>The Walk Culture uses motion data to show your steps updating live.</string>
 </dict>
 </plist>
