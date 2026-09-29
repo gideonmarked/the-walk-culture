@@ -205,9 +205,9 @@ class PlayerController extends StateNotifier<PlayerState> {
         debugPrint('Failed to load saved player state: $e');
       }
     }
-    // Fresh install with a cloud backup → pull the player's progress back.
-    await _restoreFromCloudIfEmpty(raw != null);
     _lastSyncDate = prefs.getString(_dateKey) ?? '';
+    // Fresh install with a cloud backup → pull the player's progress back.
+    await _restoreFromCloudIfNeeded(prefs, hadLocalSave: raw != null);
     // Baseline the tier marker silently so we don't fire a celebration for
     // progress made before this feature existed.
     state = state.copyWith(
@@ -386,25 +386,60 @@ class PlayerController extends StateNotifier<PlayerState> {
   /// Fire-and-forget: a failed backup must never interrupt play.
   void _scheduleCloudBackup() {
     final cloud = _ref.read(cloudSyncProvider);
-    if (!cloud.isReady) return;
+    // Until we know whether a backup exists, this device's fresh state must not
+    // be pushed over it.
+    if (!cloud.isReady || _restorePending) return;
     _cloudDebounce?.cancel();
     _cloudDebounce = Timer(const Duration(seconds: 10), () {
       cloud.pushSave(state.toJson());
     });
   }
 
+  static const _restorePendingKey = 'stepquest_restore_pending_v1';
+
+  /// True while a fresh install hasn't yet heard whether a cloud backup
+  /// exists. Blocks backups, and persists: the fresh state is saved locally,
+  /// so without the flag the next launch would see "has a local save", skip
+  /// the restore for good, and push the fresh state over the real backup.
+  bool _restorePending = false;
+
   /// Adopt the cloud save when this device has nothing local — the reinstall /
   /// new-device path. When both exist we keep local: it's the live session, and
   /// the blob is only a backup. A real merge needs server-authoritative credits
   /// (credit_steps) rather than last-writer-wins on a blob.
-  Future<void> _restoreFromCloudIfEmpty(bool hadLocalSave) async {
-    if (hadLocalSave) return;
+  ///
+  /// A pull that FAILS is not "no backup": it leaves the restore pending and
+  /// retries on the next launch.
+  Future<void> _restoreFromCloudIfNeeded(SharedPreferences prefs,
+      {required bool hadLocalSave}) async {
     final cloud = _ref.read(cloudSyncProvider);
-    if (!cloud.isReady) return;
+    if (!cloud.isConfigured) return; // no backend, so no backup to wait for
+    final pending = prefs.getBool(_restorePendingKey) ?? false;
+    if (hadLocalSave && !pending) return;
+
     final remote = await cloud.pullSave();
-    if (remote == null) return;
+    if (remote.failed) {
+      _restorePending = true;
+      await prefs.setBool(_restorePendingKey, true);
+      return;
+    }
+    _restorePending = false;
+    await prefs.remove(_restorePendingKey);
+
+    final blob = remote.value;
+    if (blob == null) return; // genuinely no backup: this is a new player
     try {
-      state = PlayerState.fromJson(remote);
+      final restored = PlayerState.fromJson(blob);
+      // A retried restore may find the player already played on this device
+      // while offline. Keep whichever save has banked more.
+      if (hadLocalSave && restored.lifetimeSteps <= state.lifetimeSteps) return;
+      state = restored;
+      // The backup's todaySteps were already credited on the day they were
+      // synced. Without this, the next sync sees a "new day" and credits the
+      // whole of today a second time.
+      _lastSyncDate = restored.questDay;
+      await prefs.setString(_stateKey, jsonEncode(state.toJson()));
+      await prefs.setString(_dateKey, _lastSyncDate);
       debugPrint('Restored player state from cloud backup');
     } catch (e) {
       debugPrint('Cloud save was unreadable, keeping fresh state: $e');
@@ -423,11 +458,26 @@ class PlayerController extends StateNotifier<PlayerState> {
       (boostActive ? 2 : 1) *
       (_ref.read(premiumControllerProvider).isVip ? 2 : 1);
 
-  /// Activate a 2x earning boost for [duration].
-  Future<void> activateBoost({Duration duration = const Duration(hours: 1)}) async {
-    final until = DateTime.now().add(duration).millisecondsSinceEpoch;
-    state = state.copyWith(boostUntilMs: until);
+  /// Whether today's free boost is still unused.
+  bool get freeBoostAvailable => state.freeBoostDay != _todayKey;
+
+  /// Use today's free 2x earning boost for [duration]. Once per day: returns
+  /// false (no-op) when it's already been used today. Travel Pass boost
+  /// rewards are separate and don't count against it.
+  Future<bool> activateBoost({Duration duration = const Duration(hours: 1)}) async {
+    if (!freeBoostAvailable) return false;
+    final now = DateTime.now();
+    // Extend rather than overwrite, so a Travel Pass boost already running
+    // isn't cut short.
+    final base = state.boostUntilMs > now.millisecondsSinceEpoch
+        ? state.boostUntilMs
+        : now.millisecondsSinceEpoch;
+    state = state.copyWith(
+      boostUntilMs: base + duration.inMilliseconds,
+      freeBoostDay: _todayKey,
+    );
     await _save();
+    return true;
   }
 
   /// Close out the previous day: grade the character's health against the steps
@@ -498,8 +548,13 @@ class PlayerController extends StateNotifier<PlayerState> {
   }
 
   Future<void> _doSync() async {
+    final dayOfRead = _todayKey;
     final todayTotal = await _health.getTodaySteps();
     if (todayTotal == null) return; // prototype uses addSimulatedSteps instead
+    // The read straddled midnight: it may be yesterday's total, which the
+    // "new day" branch below would credit a second time as today's. Drop it;
+    // the next poll reads the new day cleanly.
+    if (_todayKey != dayOfRead) return;
 
     final newDay = _lastSyncDate != _todayKey;
     final alreadyCredited = newDay ? 0 : state.todaySteps;
@@ -889,7 +944,7 @@ class PlayerController extends StateNotifier<PlayerState> {
       case PassRewardKind.boost:
         // Extend from the later of now/current expiry so claiming a boost while
         // one is already running stacks instead of throwing the remainder away
-        // (activateBoost overwrites; a reward you've earned shouldn't).
+        // (a reward you've earned shouldn't be cut short).
         final now = DateTime.now().millisecondsSinceEpoch;
         final base = state.boostUntilMs > now ? state.boostUntilMs : now;
         state = state.copyWith(

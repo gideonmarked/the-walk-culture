@@ -9,6 +9,8 @@ import 'core/crash_reporter.dart';
 import 'services/cloud/cloud_sync_service.dart';
 import 'services/consent_service.dart';
 import 'services/local_notification_service.dart';
+import 'services/purchase_service.dart';
+import 'services/store_purchase_service.dart';
 import 'state/crash_providers.dart';
 
 Future<void> main() async {
@@ -25,6 +27,11 @@ Future<void> main() async {
   // No-op unless the build was given SUPABASE_URL / SUPABASE_ANON_KEY, and it
   // swallows its own errors — a backend outage must never block launch.
   await CloudSyncService.initialize();
+  // Listen for purchases from launch, not from the Store screen: Play
+  // redelivers unfinished purchases and active subscriptions here, and they
+  // must be validated and credited even if the player never opens the Store.
+  final billing = container.read(purchaseServiceProvider);
+  if (billing is StorePurchaseService) unawaited(billing.start());
   // Notification channel + Android 13 permission. Best-effort; can't block launch.
   unawaited(LocalNotificationService.initialize());
   // GDPR: resolve ad consent, then init the ads SDK. Both swallow their own

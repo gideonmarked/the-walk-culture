@@ -42,11 +42,26 @@ itself VIP or currency by writing rows. Real-money grants happen only inside
 calls `grant_purchase()` with the service-role key; `grant_purchase` is
 `REVOKE`d from `anon`/`authenticated` so the client can't call it directly, and
 it keys off a **unique `purchase_token`** so a replayed receipt can't pay twice.
+Subscriptions are the exception: Google reuses one token across renewals, so
+VIP is *set* to the expiry Google reports rather than stacked per token.
 Rewarded-ad daily caps are enforced in `claim_ad_reward()`, not on the client.
+
+`profile` rows are readable by every signed-in user (friend discovery), so
+nothing private may live on `profile`. The cloud save is in `player_save`,
+readable and writable only by its owner.
+
+## Upgrading an existing project
+
+Every file here is safe to re-run. After pulling backend changes, re-run
+`schema.sql` and then `social.sql` in the SQL Editor, and redeploy the function
+(`supabase functions deploy validate-purchase`). `schema.sql` migrates old
+`profile.save_blob` data into `player_save` and drops that column.
+Deploy the SQL and the function together: the function calls
+`grant_purchase(…, p_vip_until)`, and the old signature is dropped.
 
 ## Known gap (deliberate, documented)
 
-**The wallet is not yet server-authoritative.** `profile.save_blob` is a
+**The wallet is not yet server-authoritative.** `player_save.save_blob` is a
 client-authored cloud *backup* for reinstall/new-device restore, not a ledger.
 `credit_steps()` is already in the schema for when step crediting moves
 server-side — that's the anti-cheat milestone.

@@ -122,7 +122,9 @@ $$;
 -- Profiles need to be discoverable by username/code to friend someone, so allow
 -- reading other profiles' PUBLIC columns. (Postgres RLS is row-level, not
 -- column-level; keep only shareable fields on `profile` and put anything
--- private elsewhere. username/account_code/display bits are fine to expose.)
+-- private elsewhere — the cloud save lives in the owner-only `player_save`
+-- table for exactly this reason. username/account_code/display bits are fine
+-- to expose.)
 drop policy if exists "read profiles for discovery" on profile;
 create policy "read profiles for discovery" on profile for select using (true);
 
@@ -261,7 +263,7 @@ end; $$;
 -- Group house upgrades — each member pays with THEIR OWN wallet.
 -- ---------------------------------------------------------------------------
 create or replace function group_house_upgrade(p_group uuid, p_cost bigint, p_new_level int)
-returns void language plpgsql security definer as $$
+returns void language plpgsql security definer set search_path = public as $$
 declare
   v_me uuid := auth.uid();
   v_spendable bigint;
@@ -269,6 +271,13 @@ begin
   if v_me is null then raise exception 'not authenticated'; end if;
   if not exists (select 1 from group_member where group_id = p_group and user_id = v_me) then
     raise exception 'not a member'; end if;
+  -- One level at a time, and it must cost something: a negative cost would
+  -- otherwise pass the funds check and ADD to the wallet.
+  if p_cost is null or p_cost <= 0 then raise exception 'invalid cost'; end if;
+  if p_new_level is distinct from
+     (select level + 1 from group_house where group_id = p_group) then
+    raise exception 'invalid level';
+  end if;
 
   select total_steps_lifetime - total_steps_spent into v_spendable
     from wallet where user_id = v_me for update;
@@ -283,3 +292,9 @@ begin
   update group_house set level = greatest(level, p_new_level), updated_at = now()
     where group_id = p_group;
 end; $$;
+
+-- The house has no client yet, and the level price still comes from the
+-- caller. Until the price table lives server-side, nobody can call this: a
+-- 1-Pebble upgrade per level would otherwise be a free maxed house.
+revoke all on function group_house_upgrade(uuid, bigint, int)
+  from public, anon, authenticated;
