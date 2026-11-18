@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../services/cloud/social_service.dart';
 import '../../state/app_providers.dart';
+import '../safety/community_terms.dart';
 
 /// The player's username + shareable account code, with copy/edit affordances.
 /// The code is minted locally on first run, so it's always present — even
@@ -74,6 +75,9 @@ class AccountCodeCard extends StatelessWidget {
 /// Prompt for a username, persist it, and publish it to the backend (if live).
 /// Shared so the Profile and the Friends & Groups screen behave identically.
 Future<void> showUsernameEditor(BuildContext context, WidgetRef ref) async {
+  // A username is visible to other players, so the community terms come first.
+  if (!await ensureCommunityTermsAccepted(context)) return;
+  if (!context.mounted) return;
   final current = ref.read(playerControllerProvider).username;
   final ctrl = TextEditingController(text: current);
   final name = await showDialog<String>(

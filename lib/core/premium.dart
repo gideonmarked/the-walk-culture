@@ -80,7 +80,26 @@ class VipPlan {
   final int days; // entitlement length granted per period
   final String priceLabel;
   final bool highlight;
+
+  /// The billing period in words, for the renewal terms Play requires next to
+  /// the buy button ("renews every month").
+  String get periodLabel => days >= 365
+      ? 'year'
+      : days >= 28
+          ? 'month'
+          : 'week';
 }
+
+/// Subscription terms shown under the VIP plans. Google Play's Subscriptions
+/// policy requires the price, period, auto-renewal and how to cancel to be
+/// clear before purchase.
+const String kVipTermsText =
+    'VIP is an auto-renewing subscription. You are charged the price shown '
+    'through Google Play when you subscribe, and again at the start of each '
+    'period until you cancel. Cancel any time in Google Play → Payments & '
+    'subscriptions → Subscriptions; VIP stays active until the end of the '
+    'period you paid for. Deleting your account does not cancel the '
+    'subscription.';
 
 const List<VipPlan> kVipPlans = [
   VipPlan(

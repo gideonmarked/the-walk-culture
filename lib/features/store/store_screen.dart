@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/links.dart';
 import '../../core/premium.dart';
 import '../../services/cloud/cloud_sync_service.dart';
 import '../../services/purchase_service.dart';
 import '../../services/rewarded_ad_service.dart';
 import '../../state/app_providers.dart';
 import '../../state/premium_providers.dart';
+import '../../widgets/open_link.dart';
 
 class StoreScreen extends ConsumerStatefulWidget {
   const StoreScreen({super.key});
@@ -319,7 +321,9 @@ class _VipSection extends StatelessWidget {
                               ],
                             ],
                           ),
-                          Text(priceOf(plan),
+                          Text(
+                              '${priceOf(plan)} · renews every '
+                              '${plan.periodLabel} until cancelled',
                               style: Theme.of(context).textTheme.bodySmall),
                         ],
                       ),
@@ -331,6 +335,25 @@ class _VipSection extends StatelessWidget {
                   ],
                 ),
               ),
+            const SizedBox(height: 4),
+            Text(kVipTermsText, style: Theme.of(context).textTheme.bodySmall),
+            Wrap(
+              spacing: 4,
+              children: [
+                TextButton(
+                  onPressed: () => openLink(context, kPlaySubscriptionsUrl),
+                  child: const Text('Manage subscriptions'),
+                ),
+                TextButton(
+                  onPressed: () => openLink(context, kTermsUrl),
+                  child: const Text('Terms'),
+                ),
+                TextButton(
+                  onPressed: () => openLink(context, kPrivacyPolicyUrl),
+                  child: const Text('Privacy'),
+                ),
+              ],
+            ),
           ],
         ),
       ),

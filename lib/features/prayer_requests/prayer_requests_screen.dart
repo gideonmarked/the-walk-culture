@@ -5,6 +5,8 @@ import '../../core/prayer_requests.dart';
 import '../../core/spheres.dart' show kSphereTiers;
 import '../../services/cloud/prayer_request_service.dart';
 import '../../state/app_providers.dart';
+import '../safety/community_terms.dart';
+import '../safety/report_dialog.dart';
 import '../spheres/spheres_screen.dart' show SphereOpenDialog;
 
 /// The shared, anonymous prayer wall. Two deliberate actions:
@@ -114,7 +116,25 @@ class _PrayerRequestsScreenState extends ConsumerState<PrayerRequestsScreen> {
     _snack('Reported — thank you for keeping this kind.');
   }
 
+  Future<void> _block() async {
+    final req = _current;
+    if (req == null) return;
+    final ok = await confirmBlock(
+      context,
+      title: 'Block this person?',
+      effect: 'You won’t see any prayer requests from the person who wrote '
+          'this one again. They stay anonymous, and they won’t be told.',
+    );
+    if (!ok) return;
+    final err = await _service.blockAuthor(req.id);
+    if (!mounted) return;
+    if (err == null) setState(() => _current = null);
+    _snack(err ?? 'Blocked. You won’t see their requests again.');
+  }
+
   Future<void> _compose() async {
+    if (!await ensureCommunityTermsAccepted(context)) return;
+    if (!mounted) return;
     final sent = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -197,6 +217,7 @@ class _PrayerRequestsScreenState extends ConsumerState<PrayerRequestsScreen> {
                       praying: _praying,
                       onPray: _pray,
                       onReport: _report,
+                      onBlock: _block,
                       onNext: (online && !_loading) ? _fetchRandom : null,
                     ),
                 ],
@@ -246,6 +267,7 @@ class _RequestCard extends StatelessWidget {
     required this.praying,
     required this.onPray,
     required this.onReport,
+    required this.onBlock,
     required this.onNext,
   });
 
@@ -254,6 +276,7 @@ class _RequestCard extends StatelessWidget {
   final bool praying;
   final VoidCallback onPray;
   final VoidCallback onReport;
+  final VoidCallback onBlock;
   final VoidCallback? onNext;
 
   @override
@@ -297,11 +320,22 @@ class _RequestCard extends StatelessWidget {
             icon: const Icon(Icons.refresh),
             label: const Text('Pray for another'),
           ),
-        TextButton.icon(
-          onPressed: onReport,
-          icon: const Icon(Icons.flag_outlined, size: 18),
-          label: const Text('Report'),
-          style: TextButton.styleFrom(foregroundColor: scheme.outline),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextButton.icon(
+              onPressed: onReport,
+              icon: const Icon(Icons.flag_outlined, size: 18),
+              label: const Text('Report'),
+              style: TextButton.styleFrom(foregroundColor: scheme.outline),
+            ),
+            TextButton.icon(
+              onPressed: onBlock,
+              icon: const Icon(Icons.block, size: 18),
+              label: const Text('Block'),
+              style: TextButton.styleFrom(foregroundColor: scheme.outline),
+            ),
+          ],
         ),
       ],
     );

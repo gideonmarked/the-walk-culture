@@ -211,5 +211,11 @@ review. Health & Fitness is the safer call.*
       Play would reject. See [`DEPLOY.md`](DEPLOY.md) §4.
 - [ ] **App icon** — still the Flutter default.
 - [ ] **Support email** — required on the listing.
-- [ ] **Account deletion** — Play requires a way to request deletion; the policy
-      offers email. A URL-based flow is required *if* you add real accounts.
+- [x] ~~**Account deletion**~~ — **in-app**: Settings → Delete account
+      (`delete_my_account()` in `supabase/safety.sql`). **Web**: enter
+      `https://gideonmarked.github.io/the-walk-culture/delete-account.html` in
+      Play Console → App content → Data deletion.
+- [x] ~~**UGC controls**~~ — community terms accepted before posting a
+      username, group name or prayer request; report + block on prayer
+      requests and players; report + leave on groups. Terms of use:
+      `https://gideonmarked.github.io/the-walk-culture/terms.html`.

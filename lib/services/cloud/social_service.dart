@@ -200,6 +200,42 @@ class SocialService {
     }
   }
 
+  /// Run a void RPC; null on success, else a short message to show.
+  Future<String?> _call(String fn, Map<String, dynamic> params,
+      {required String offline, required String failed}) async {
+    if (!_online) return offline;
+    try {
+      await _db.rpc(fn, params: params);
+      return null;
+    } on PostgrestException catch (e) {
+      return e.message;
+    } catch (e) {
+      debugPrint('$fn failed: $e');
+      return failed;
+    }
+  }
+
+  /// Block a player: removes the friendship both ways, stops friend requests
+  /// between you, and hides their prayer requests from you.
+  Future<String?> blockUser(String userId) => _call(
+      'block_user', {'p_user': userId},
+      offline: 'Connect to block', failed: 'Could not block');
+
+  /// Report a player for review. [reason] is a short label from the app.
+  Future<String?> reportUser(String userId, String reason) => _call(
+      'report_user', {'p_user': userId, 'p_reason': reason},
+      offline: 'Connect to report', failed: 'Could not send report');
+
+  /// Report a group (e.g. an offensive name) for review.
+  Future<String?> reportGroup(String groupId, String reason) => _call(
+      'report_group', {'p_group': groupId, 'p_reason': reason},
+      offline: 'Connect to report', failed: 'Could not send report');
+
+  /// Leave a group. If you own it, the group is deleted for everyone.
+  Future<String?> leaveGroup(String groupId) => _call(
+      'leave_group', {'p_group': groupId},
+      offline: 'Connect to leave the group', failed: 'Could not leave the group');
+
   Future<String?> joinGroup(String code) async {
     if (!_online) return 'Sign in to join a group';
     try {
