@@ -130,6 +130,17 @@ create table if not exists purchase_receipt (
   validated_at timestamptz not null default now()
 );
 
+-- Pack tokens that were paid out to an account that has since been deleted
+-- (see delete_my_account in safety.sql). Holds no user id. Without it, deleting
+-- an account would also delete its receipts, and a new account could replay an
+-- old pack receipt to be paid twice. No policies: server-only.
+create table if not exists spent_purchase_token (
+  purchase_token text primary key,
+  product_id     text not null,
+  spent_at       timestamptz not null default now()
+);
+alter table spent_purchase_token enable row level security;
+
 -- Rewarded-ad payouts. The per-day cap is enforced HERE, server-side — the
 -- client-side cap is a UX nicety and trivially bypassable.
 create table if not exists ad_reward (
@@ -365,6 +376,12 @@ declare
   v_owner uuid;
   v_inserted int;
 begin
+  -- A pack already paid to a since-deleted account pays nothing again.
+  if p_steps > 0 and exists (
+       select 1 from spent_purchase_token where purchase_token = p_purchase_token) then
+    raise exception 'purchase token already used';
+  end if;
+
   select user_id into v_owner from purchase_receipt
     where purchase_token = p_purchase_token;
   if v_owner is not null and v_owner <> p_user then

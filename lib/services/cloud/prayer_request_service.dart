@@ -95,6 +95,21 @@ class PrayerRequestService {
     }
   }
 
+  /// Block the (anonymous) author of a request: none of their requests are
+  /// shown to you again. Their identity stays hidden — the server looks it up.
+  /// Returns null on success or a short error to show.
+  Future<String?> blockAuthor(String requestId) async {
+    if (!online) return 'Connect to block';
+    try {
+      await _db.rpc('block_prayer_author', params: {'p_request_id': requestId});
+      return null;
+    } on PostgrestException catch (e) {
+      return e.message;
+    } catch (e) {
+      return 'Could not block';
+    }
+  }
+
   /// Flag a request as inappropriate. Enough distinct reports auto-hides it.
   Future<void> report(String requestId) async {
     if (!online) return;

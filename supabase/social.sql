@@ -61,6 +61,30 @@ create table if not exists friendship (
 create index if not exists friendship_friend on friendship(friend_id);
 
 -- ---------------------------------------------------------------------------
+-- Blocks (Play UGC policy). One row per (blocker, blocked). A block removes any
+-- friendship between the two, stops friend requests either way, and hides the
+-- blocked person's prayer requests. Writes go through block_user /
+-- unblock_user / block_prayer_author in safety.sql.
+-- ---------------------------------------------------------------------------
+create table if not exists user_block (
+  blocker    uuid not null references auth.users(id) on delete cascade,
+  blocked    uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (blocker, blocked),
+  check (blocker <> blocked)
+);
+create index if not exists user_block_blocked on user_block(blocked);
+
+-- True when either user has blocked the other.
+create or replace function is_blocked_between(p_a uuid, p_b uuid) returns boolean
+language sql security definer stable set search_path = public as $$
+  select exists (
+    select 1 from user_block
+    where (blocker = p_a and blocked = p_b) or (blocker = p_b and blocked = p_a)
+  );
+$$;
+
+-- ---------------------------------------------------------------------------
 -- Groups + membership + the shared house.
 -- ---------------------------------------------------------------------------
 create table if not exists groupe (          -- "group" is a reserved word
@@ -105,6 +129,12 @@ alter table groupe enable row level security;
 alter table group_member enable row level security;
 alter table group_house enable row level security;
 alter table group_house_contribution enable row level security;
+alter table user_block enable row level security;
+
+-- You can see who YOU blocked (for an unblock list); nobody can see who
+-- blocked them.
+drop policy if exists "see own blocks" on user_block;
+create policy "see own blocks" on user_block for select using (auth.uid() = blocker);
 
 -- Membership check that BYPASSES RLS (security definer). Policies below must
 -- use this instead of querying group_member directly: a group_member policy
@@ -160,7 +190,10 @@ declare
 begin
   if v_me is null then raise exception 'not authenticated'; end if;
   select user_id into v_them from profile where account_code = upper(p_code);
-  if v_them is null then raise exception 'no such code'; end if;
+  -- A block answers like an unknown code, so it is never revealed.
+  if v_them is null or is_blocked_between(v_me, v_them) then
+    raise exception 'no such code';
+  end if;
   if v_them = v_me then raise exception 'cannot friend yourself'; end if;
 
   insert into friendship(user_id, friend_id, accepted)

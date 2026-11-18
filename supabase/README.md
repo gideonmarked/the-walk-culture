@@ -23,6 +23,7 @@ nothing breaks when it's absent.
 |---|---|
 | `schema.sql` | Tables, row-level security, and the money functions |
 | `seed_shop_items.sql` | **Generated** — run after `schema.sql` to fill `shop_item` |
+| `safety.sql` | Account deletion, blocking, reporting, leaving groups — run after `social.sql` and `prayer_requests.sql` |
 | `functions/validate-purchase/` | Edge Function: verifies store receipts, grants entitlements |
 
 Regenerate the seed whenever `lib/data/shop_catalog.dart` changes, or the
@@ -52,12 +53,28 @@ readable and writable only by its owner.
 
 ## Upgrading an existing project
 
-Every file here is safe to re-run. After pulling backend changes, re-run
-`schema.sql` and then `social.sql` in the SQL Editor, and redeploy the function
+Every file here is safe to re-run. After pulling backend changes, re-run, in
+order, `schema.sql`, `social.sql`, `prayer_requests.sql` and `safety.sql` in the
+SQL Editor, and redeploy the function
 (`supabase functions deploy validate-purchase`). `schema.sql` migrates old
 `profile.save_blob` data into `player_save` and drops that column.
 Deploy the SQL and the function together: the function calls
 `grant_purchase(…, p_vip_until)`, and the old signature is dropped.
+
+## Moderation (Google Play UGC policy)
+
+Players can report prayer requests, other players and groups, and block other
+players. Prayer requests hide themselves after 3 reports. Player and group
+reports land in `user_report` with `status = 'open'`: review them in
+**Table editor → user_report**, act on them (for example delete an offensive
+group, or the reported user's account in **Authentication → Users**), then set
+`status` to `actioned` or `dismissed`. Check it regularly — Play expects
+reports to be acted on.
+
+Account deletion requests that arrive by email (see `docs/delete-account.html`):
+find the account by its code with
+`select user_id from profile where account_code = 'A7A43B7';`, then delete that
+user in **Authentication → Users**. Every table cascades.
 
 ## Known gap (deliberate, documented)
 

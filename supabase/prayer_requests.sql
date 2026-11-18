@@ -114,6 +114,11 @@ begin
       and not exists (
         select 1 from prayer_request_pray p
         where p.request_id = pr.id and p.pray_by = v_user)
+      -- Never show requests from someone the caller blocked (user_block is
+      -- defined in social.sql).
+      and not exists (
+        select 1 from user_block b
+        where b.blocker = v_user and b.blocked = pr.author)
     order by random()
     limit 1;
 end; $$;

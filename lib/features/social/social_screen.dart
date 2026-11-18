@@ -4,11 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show Supabase;
 
 import '../../core/social.dart';
 import '../../services/cloud/cloud_sync_service.dart';
 import '../../services/cloud/social_service.dart';
 import '../../state/app_providers.dart';
+import '../safety/community_terms.dart';
+import '../safety/report_dialog.dart';
 import 'account_code_card.dart';
 
 /// Friends & Groups. Your account code and the group-cost preview work offline;
@@ -120,6 +123,8 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                     loading: _loading,
                     onAdd: _addFriend,
                     onAccept: _acceptFriend,
+                    onReport: _reportUser,
+                    onBlock: _blockUser,
                   ),
                   _GroupsTab(
                     groups: _groups,
@@ -130,6 +135,8 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                     fmt: _fmt,
                     onCreate: _createGroup,
                     onJoin: _joinGroup,
+                    onReport: _reportGroup,
+                    onLeave: _leaveGroup,
                   ),
                 ],
               ),
@@ -172,7 +179,65 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
     if (err == null) _refresh();
   }
 
+  Future<void> _reportUser(SocialUser u) async {
+    final reason = await pickReportReason(context, u.display);
+    if (reason == null) return;
+    final err = await ref.read(socialServiceProvider).reportUser(u.id, reason);
+    _toast(err ?? 'Report sent — thank you. We’ll review it.');
+  }
+
+  Future<void> _blockUser(SocialUser u) async {
+    final ok = await confirmBlock(
+      context,
+      title: 'Block ${u.display}?',
+      effect: 'They’ll be removed from your friends, neither of you can send '
+          'the other a friend request, and you won’t see their prayer '
+          'requests. They won’t be told.',
+    );
+    if (!ok) return;
+    final err = await ref.read(socialServiceProvider).blockUser(u.id);
+    _toast(err ?? '${u.display} is blocked');
+    if (err == null) _refresh(silent: true);
+  }
+
+  Future<void> _reportGroup(Group g) async {
+    final reason = await pickReportReason(context, g.name);
+    if (reason == null) return;
+    final err = await ref.read(socialServiceProvider).reportGroup(g.id, reason);
+    _toast(err ?? 'Report sent — thank you. We’ll review it.');
+  }
+
+  Future<void> _leaveGroup(Group g) async {
+    final me = Supabase.instance.client.auth.currentUser?.id;
+    final owner = me != null && g.ownerId == me;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(owner ? 'Delete ${g.name}?' : 'Leave ${g.name}?'),
+        content: Text(owner
+            ? 'You own this group, so leaving deletes it for every member, '
+                'along with its house.'
+            : 'You can rejoin later with the group code.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(owner ? 'Delete group' : 'Leave')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final err = await ref.read(socialServiceProvider).leaveGroup(g.id);
+    _toast(err ?? (owner ? 'Group deleted' : 'You left ${g.name}'));
+    if (err == null) _refresh(silent: true);
+  }
+
   Future<void> _createGroup() async {
+    // A group name is visible to other players: community terms first.
+    if (!await ensureCommunityTermsAccepted(context)) return;
+    if (!mounted) return;
     final ctrl = TextEditingController();
     final ownedNow = _groups.length; // best-effort; server is authoritative
     final cost = groupSlotCost(ownedNow);
@@ -265,13 +330,26 @@ class _FriendsTab extends StatelessWidget {
       required this.online,
       required this.loading,
       required this.onAdd,
-      required this.onAccept});
+      required this.onAccept,
+      required this.onReport,
+      required this.onBlock});
   final List<SocialUser> friends;
   final List<SocialUser> incoming;
   final bool online;
   final bool loading;
   final VoidCallback onAdd;
   final void Function(SocialUser) onAccept;
+  final void Function(SocialUser) onReport;
+  final void Function(SocialUser) onBlock;
+
+  Widget _menu(SocialUser u) => PopupMenuButton<String>(
+        tooltip: 'More',
+        onSelected: (v) => v == 'report' ? onReport(u) : onBlock(u),
+        itemBuilder: (_) => const [
+          PopupMenuItem(value: 'report', child: Text('Report')),
+          PopupMenuItem(value: 'block', child: Text('Block')),
+        ],
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -303,9 +381,15 @@ class _FriendsTab extends StatelessWidget {
                         CircleAvatar(child: Text(r.display.characters.first)),
                     title: Text(r.display),
                     subtitle: const Text('Wants to be friends'),
-                    trailing: FilledButton(
-                      onPressed: () => onAccept(r),
-                      child: const Text('Accept'),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        FilledButton(
+                          onPressed: () => onAccept(r),
+                          child: const Text('Accept'),
+                        ),
+                        _menu(r),
+                      ],
                     ),
                   ),
                 const Divider(),
@@ -315,7 +399,13 @@ class _FriendsTab extends StatelessWidget {
                   leading: CircleAvatar(child: Text(f.display.characters.first)),
                   title: Text(f.display),
                   subtitle: Text(f.accepted ? (f.accountCode ?? '') : 'Request pending'),
-                  trailing: f.accepted ? null : const Icon(Icons.hourglass_top, size: 18),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (!f.accepted) const Icon(Icons.hourglass_top, size: 18),
+                      _menu(f),
+                    ],
+                  ),
                 ),
             ],
           ),
@@ -340,13 +430,17 @@ class _GroupsTab extends StatelessWidget {
       required this.ownedCount,
       required this.fmt,
       required this.onCreate,
-      required this.onJoin});
+      required this.onJoin,
+      required this.onReport,
+      required this.onLeave});
   final List<Group> groups;
   final bool online;
   final int ownedCount;
   final NumberFormat fmt;
   final VoidCallback onCreate;
   final VoidCallback onJoin;
+  final void Function(Group) onReport;
+  final void Function(Group) onLeave;
 
   @override
   Widget build(BuildContext context) {
@@ -397,7 +491,15 @@ class _GroupsTab extends StatelessWidget {
                     leading: const Icon(Icons.groups),
                     title: Text(g.name),
                     subtitle: Text('Code ${g.code}  ·  tap for the group house'),
-                    trailing: const Icon(Icons.chevron_right),
+                    trailing: PopupMenuButton<String>(
+                      tooltip: 'More',
+                      onSelected: (v) =>
+                          v == 'report' ? onReport(g) : onLeave(g),
+                      itemBuilder: (_) => const [
+                        PopupMenuItem(value: 'report', child: Text('Report group')),
+                        PopupMenuItem(value: 'leave', child: Text('Leave group')),
+                      ],
+                    ),
                     onTap: () => Navigator.of(context).push(MaterialPageRoute(
                       builder: (_) => _GroupHousePlaceholder(group: g),
                     )),

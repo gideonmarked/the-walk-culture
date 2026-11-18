@@ -6,12 +6,15 @@ import '../../core/app_info.dart';
 import '../../core/crash_reporter.dart';
 import '../../core/dev_flags.dart';
 import '../../core/health.dart';
+import '../../core/links.dart';
 import '../../data/achievements_catalog.dart';
 import '../../data/shop_catalog.dart';
 import '../../state/app_providers.dart';
 import '../../state/crash_providers.dart';
 import '../../state/feedback_providers.dart';
+import '../../widgets/open_link.dart';
 import '../feedback/feedback_screen.dart';
+import 'delete_account.dart';
 import '../stats/statistics_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -107,10 +110,30 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const Divider(),
-          const ListTile(
-            title: Text('Privacy'),
-            subtitle: Text(
+          const _SectionHeader('Privacy & account'),
+          ListTile(
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: const Text('Privacy policy'),
+            subtitle: const Text(
                 'Health data is used only to count steps. Never sold, never sent to ads.'),
+            trailing: const Icon(Icons.open_in_new, size: 18),
+            onTap: () => openLink(context, kPrivacyPolicyUrl),
+          ),
+          ListTile(
+            leading: const Icon(Icons.gavel_outlined),
+            title: const Text('Terms of use'),
+            subtitle: const Text('Community rules, purchases and subscriptions'),
+            trailing: const Icon(Icons.open_in_new, size: 18),
+            onTap: () => openLink(context, kTermsUrl),
+          ),
+          ListTile(
+            leading: Icon(Icons.delete_forever_outlined,
+                color: Theme.of(context).colorScheme.error),
+            title: Text('Delete account',
+                style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            subtitle: const Text(
+                'Permanently delete your account and all its data'),
+            onTap: () => confirmAndDeleteAccount(context, ref),
           ),
           // Progress wipe is a developer tool — kDevToolsEnabled keeps it out of
           // a public release, where a stray tap would nuke a paying player.
