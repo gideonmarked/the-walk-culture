@@ -123,13 +123,19 @@ class CloudSyncService {
   /// Hand a store purchase to the backend. The Edge Function verifies the
   /// receipt with Google and grants the entitlement. See [ValidationOutcome]
   /// for what the caller must do with each answer.
+  ///
+  /// [platform] is `google_play` (token = Play purchase token) or `app_store`
+  /// (token = the StoreKit 2 transaction id, which the server looks up with
+  /// Apple's App Store Server API).
   Future<PurchaseValidation> validatePurchase({
     required String productId,
     required String purchaseToken,
+    String platform = 'google_play',
   }) async {
     if (!isReady) return const PurchaseValidation(ValidationOutcome.retryLater);
     try {
       final res = await _db.functions.invoke('validate-purchase', body: {
+        'platform': platform,
         'productId': productId,
         'purchaseToken': purchaseToken,
       });

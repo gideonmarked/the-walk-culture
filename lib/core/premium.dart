@@ -91,15 +91,20 @@ class VipPlan {
 }
 
 /// Subscription terms shown under the VIP plans. Google Play's Subscriptions
-/// policy requires the price, period, auto-renewal and how to cancel to be
-/// clear before purchase.
-const String kVipTermsText =
-    'VIP is an auto-renewing subscription. You are charged the price shown '
-    'through Google Play when you subscribe, and again at the start of each '
-    'period until you cancel. Cancel any time in Google Play → Payments & '
-    'subscriptions → Subscriptions; VIP stays active until the end of the '
-    'period you paid for. Deleting your account does not cancel the '
-    'subscription.';
+/// policy and App Store guideline 3.1.2 both require the price, period,
+/// auto-renewal and how to cancel to be clear before purchase.
+String vipTermsText({required bool ios}) {
+  final store = ios ? 'your Apple ID' : 'Google Play';
+  final cancel = ios
+      ? 'Settings → your name → Subscriptions, at least 24 hours before the '
+          'period ends'
+      : 'Google Play → Payments & subscriptions → Subscriptions';
+  return 'VIP is an auto-renewing subscription. You are charged the price '
+      'shown through $store when you subscribe, and again at the start of '
+      'each period unless you cancel. Cancel any time in $cancel; VIP stays '
+      'active until the end of the period you paid for. Deleting your account '
+      'does not cancel the subscription.';
+}
 
 const List<VipPlan> kVipPlans = [
   VipPlan(

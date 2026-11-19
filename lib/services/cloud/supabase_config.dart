@@ -28,4 +28,10 @@ class SupabaseConfig {
   /// Without it the "Link Google account" option is hidden. See
   /// docs/DEPLOY.md, "Google account linking".
   static const googleWebClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+
+  /// The **iOS** OAuth client ID, needed for Google sign-in on iPhone (its
+  /// reversed form also goes in ios/Flutter/AppConfig.xcconfig):
+  ///
+  ///   --dart-define=GOOGLE_IOS_CLIENT_ID=1234-xyz.apps.googleusercontent.com
+  static const googleIosClientId = String.fromEnvironment('GOOGLE_IOS_CLIENT_ID');
 }

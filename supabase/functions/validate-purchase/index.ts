@@ -1,8 +1,12 @@
 // StepQuest — server-side purchase validation.
 //
 // The ONLY place a real-money entitlement is granted. Flow:
-//   client buys via Play Billing  ->  sends {productId, purchaseToken}
-//   -> we verify the token with Google's Android Publisher API
+//   Android: client buys via Play Billing -> sends {platform: 'google_play',
+//            productId, purchaseToken} -> we verify the token with Google's
+//            Android Publisher API
+//   iOS:     client buys via StoreKit 2 -> sends {platform: 'app_store',
+//            productId, purchaseToken: <transaction id>} -> we look the
+//            transaction up with Apple's App Store Server API
 //   -> we call grant_purchase() with the service-role key (idempotent)
 //
 // Why it must be server-side: a client can lie about having purchased. The
@@ -16,6 +20,8 @@
 //
 // Deploy:  supabase functions deploy validate-purchase
 // Secrets: supabase secrets set GOOGLE_SERVICE_ACCOUNT_JSON='{...}'
+//          (iOS) APPLE_IAP_KEY_ID, APPLE_IAP_ISSUER_ID, APPLE_IAP_PRIVATE_KEY
+//          (the .p8 file's contents), APPLE_BUNDLE_ID — see docs/IOS.md
 //
 // Free tier: 500k invocations/month — far beyond what this needs.
 
@@ -42,10 +48,125 @@ const PACKAGE_NAME = 'com.perfeos.step_quest';
 // guard (every new spelling of the same token looks unused).
 const TOKEN_PATTERN = /^[A-Za-z0-9._-]{16,4096}$/;
 
-/** Google answered, and the answer is final. */
+/** The store answered, and the answer is final. */
 type Verdict =
   | { valid: false }
-  | { valid: true; vipUntil?: string };
+  | { valid: true; vipUntil?: string; receiptKey?: string };
+
+// --- App Store -------------------------------------------------------------
+
+const APPLE_BUNDLE_ID = Deno.env.get('APPLE_BUNDLE_ID') ?? 'com.perfeos.stepQuest';
+
+// StoreKit transaction ids are decimal strings. Anything else is refused
+// before it is put in a URL (same reasoning as TOKEN_PATTERN).
+const TRANSACTION_ID_PATTERN = /^\d{1,24}$/;
+
+const APPLE_HOSTS = [
+  'https://api.storekit.itunes.apple.com', // production
+  'https://api.storekit-sandbox.itunes.apple.com', // sandbox / TestFlight
+];
+
+function b64url(bytes: Uint8Array): string {
+  let s = '';
+  for (const b of bytes) s += String.fromCharCode(b);
+  return btoa(s).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+}
+
+function b64urlDecode(s: string): string {
+  const pad = s.length % 4 === 0 ? '' : '='.repeat(4 - (s.length % 4));
+  return atob(s.replace(/-/g, '+').replace(/_/g, '/') + pad);
+}
+
+/** Sign a short-lived App Store Server API token (ES256, In-App Purchase key). */
+async function appleApiToken(): Promise<string> {
+  const keyId = Deno.env.get('APPLE_IAP_KEY_ID');
+  const issuer = Deno.env.get('APPLE_IAP_ISSUER_ID');
+  const pem = Deno.env.get('APPLE_IAP_PRIVATE_KEY');
+  if (!keyId || !issuer || !pem) {
+    // Misconfiguration, not a verdict on the purchase: let the app retry.
+    throw new RetryableError('App Store credentials are not configured');
+  }
+  const now = Math.floor(Date.now() / 1000);
+  const enc = new TextEncoder();
+  const header = b64url(enc.encode(JSON.stringify({ alg: 'ES256', kid: keyId, typ: 'JWT' })));
+  const payload = b64url(enc.encode(JSON.stringify({
+    iss: issuer,
+    iat: now,
+    exp: now + 600,
+    aud: 'appstoreconnect-v1',
+    bid: APPLE_BUNDLE_ID,
+  })));
+  const unsigned = `${header}.${payload}`;
+
+  const der = Uint8Array.from(
+    atob(pem.replace(/-----(BEGIN|END) PRIVATE KEY-----/g, '').replace(/\s/g, '')),
+    (c) => c.charCodeAt(0),
+  );
+  const key = await crypto.subtle.importKey(
+    'pkcs8',
+    der,
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    false,
+    ['sign'],
+  );
+  // WebCrypto returns the raw r||s signature, which is exactly JWS's format.
+  const sig = new Uint8Array(await crypto.subtle.sign(
+    { name: 'ECDSA', hash: 'SHA-256' },
+    key,
+    enc.encode(unsigned),
+  ));
+  return `${unsigned}.${b64url(sig)}`;
+}
+
+/**
+ * Ask Apple about this transaction. The signedTransactionInfo comes straight
+ * from Apple over TLS on our own authenticated request, so its payload can be
+ * read without re-verifying the signature chain.
+ */
+async function verifyWithApple(
+  productId: string,
+  transactionId: string,
+  isSubscription: boolean,
+): Promise<Verdict> {
+  const token = await appleApiToken();
+  for (const host of APPLE_HOSTS) {
+    const res = await fetch(`${host}/inApps/v1/transactions/${transactionId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    // Not in this environment (e.g. a sandbox purchase asked of production).
+    if (res.status === 404) continue;
+    // Apple unavailable, or our key is wrong: not a verdict on the purchase.
+    if (res.status >= 500 || res.status === 429 || res.status === 401) {
+      throw new RetryableError(`apple ${res.status}: ${await res.text()}`);
+    }
+    if (!res.ok) return { valid: false };
+
+    const { signedTransactionInfo } = await res.json();
+    const tx = JSON.parse(b64urlDecode(String(signedTransactionInfo).split('.')[1]));
+
+    // The transaction must be ours and be the product we're pricing.
+    if (tx.bundleId !== APPLE_BUNDLE_ID || tx.productId !== productId) {
+      return { valid: false };
+    }
+    if (tx.revocationDate) return { valid: false }; // refunded or revoked
+
+    if (isSubscription) {
+      const expiry = Number(tx.expiresDate ?? 0);
+      if (!(expiry > Date.now())) return { valid: false };
+      // Every renewal has a new transaction id but the same original one. Key
+      // on that, so one subscription can't be redeemed by two accounts.
+      return {
+        valid: true,
+        vipUntil: new Date(expiry).toISOString(),
+        receiptKey: `apple:${tx.originalTransactionId}`,
+      };
+    }
+    return { valid: true, receiptKey: `apple:${tx.transactionId}` };
+  }
+  return { valid: false }; // in neither environment
+}
+
+// --- Google Play -----------------------------------------------------------
 
 class RetryableError extends Error {}
 
@@ -148,17 +269,26 @@ Deno.serve(async (req) => {
     const user = userData?.user;
     if (!user) return new Response('unauthorized', { status: 401 });
 
-    const { productId, purchaseToken } = await req.json();
+    const body = await req.json();
+    const { productId, purchaseToken } = body;
+    // Older app builds send no platform: they were all Android.
+    const platform: string = body.platform ?? 'google_play';
     const grant = Object.hasOwn(PRODUCTS, productId) ? PRODUCTS[productId] : undefined;
     if (!grant) {
       return new Response('unknown product', { status: 400 });
     }
-    if (typeof purchaseToken !== 'string' || !TOKEN_PATTERN.test(purchaseToken)) {
+    if (platform !== 'google_play' && platform !== 'app_store') {
+      return new Response('unknown platform', { status: 400 });
+    }
+    const pattern = platform === 'app_store' ? TRANSACTION_ID_PATTERN : TOKEN_PATTERN;
+    if (typeof purchaseToken !== 'string' || !pattern.test(purchaseToken)) {
       return new Response('malformed purchase token', { status: 400 });
     }
 
     const isSub = (grant.vipDays ?? 0) > 0;
-    const verdict = await verifyWithGoogle(productId, purchaseToken, isSub);
+    const verdict = platform === 'app_store'
+      ? await verifyWithApple(productId, purchaseToken, isSub)
+      : await verifyWithGoogle(productId, purchaseToken, isSub);
     if (!verdict.valid) {
       return new Response(JSON.stringify({ ok: false, reason: 'invalid receipt' }), {
         status: 402,
@@ -173,16 +303,18 @@ Deno.serve(async (req) => {
     );
     const { error } = await admin.rpc('grant_purchase', {
       p_user: user.id,
-      p_platform: 'google_play',
+      p_platform: platform,
       p_product_id: productId,
-      p_purchase_token: purchaseToken,
+      p_purchase_token: verdict.receiptKey ?? purchaseToken,
       p_steps: grant.steps ?? 0,
       p_vip_until: verdict.vipUntil ?? null,
     });
     if (error) {
       // A token already redeemed by another account is a final no, not a
       // server fault — don't make that client retry it forever.
-      if (String(error.message).includes('belongs to another account')) {
+      // Same for a pack already paid to a since-deleted account.
+      if (String(error.message).includes('belongs to another account') ||
+          String(error.message).includes('already used')) {
         return new Response(JSON.stringify({ ok: false, reason: 'token already used' }), {
           status: 409,
           headers: { 'Content-Type': 'application/json' },

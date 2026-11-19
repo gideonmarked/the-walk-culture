@@ -1,0 +1,14 @@
+// iOS identifiers that Info.plist reads as $(BUILD_SETTINGS).
+// Fill these in before an App Store build. See docs/IOS.md.
+//
+// Note: in .xcconfig files "//" starts a comment, so never paste a URL here.
+
+// AdMob iOS app ID (AdMob → Apps → add the iOS app → App settings).
+// Default is Google's sample ID, which only serves test ads.
+ADMOB_IOS_APP_ID = ca-app-pub-3940256099942544~1458002511
+
+// Google Sign-In on iPhone: the REVERSED iOS client ID from Google Cloud
+// Console, e.g. com.googleusercontent.apps.1234-abcd. Registers the URL scheme
+// Google redirects back to. Leave the placeholder until you set up Google
+// sign-in for iOS; Sign in with Apple doesn't need it.
+GOOGLE_REVERSED_CLIENT_ID = com.googleusercontent.apps.not-configured

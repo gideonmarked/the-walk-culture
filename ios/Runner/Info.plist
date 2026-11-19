@@ -66,11 +66,36 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<!-- AdMob: the SDK aborts at launch without an app id. This is Google's
-	     sample iOS app id (serves test ads only). Register the iOS app in
-	     AdMob and replace it before an iOS release. -->
+	<!-- AdMob: the SDK aborts at launch without an app id. Set in
+	     ios/Flutter/AppConfig.xcconfig (defaults to Google's test app id). -->
 	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<string>$(ADMOB_IOS_APP_ID)</string>
+	<!-- AdMob ad attribution without tracking (Google's SKAdNetwork id). -->
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>cstr6suwn9.skadnetwork</string>
+		</dict>
+	</array>
+	<!-- Google Sign-In returns to the app through this URL scheme. Set the
+	     reversed iOS client id in ios/Flutter/AppConfig.xcconfig. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>$(GOOGLE_REVERSED_CLIENT_ID)</string>
+			</array>
+		</dict>
+	</array>
+	<!-- Opening the privacy policy / terms / subscription settings. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>https</string>
+	</array>
 	<!-- iOS kills the app on first HealthKit / CMPedometer access without these. -->
 	<key>NSHealthShareUsageDescription</key>
 	<string>The Walk Culture reads your step count to turn your walking into in-game currency.</string>
