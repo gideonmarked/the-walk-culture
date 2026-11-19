@@ -19,4 +19,13 @@ class SupabaseConfig {
   static const anonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
   static bool get isConfigured => url.isNotEmpty && anonKey.isNotEmpty;
+
+  /// The **Web** OAuth client ID from Google Cloud Console, used as Google
+  /// Sign-In's server client ID so it returns an ID token Supabase can verify:
+  ///
+  ///   --dart-define=GOOGLE_WEB_CLIENT_ID=1234-abc.apps.googleusercontent.com
+  ///
+  /// Without it the "Link Google account" option is hidden. See
+  /// docs/DEPLOY.md, "Google account linking".
+  static const googleWebClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
 }

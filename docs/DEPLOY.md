@@ -89,6 +89,43 @@ network. That's the current default.
 Supabase **pauses free projects after ~7 days of inactivity**. One request wakes
 it (slow first hit). For a live app with daily users this never triggers.
 
+### Google account linking (optional sign-in)
+
+Settings → **Link Google account** attaches a Google login to the player's
+anonymous account, so the same progress can be signed into on a new phone. It
+is optional (Play's "App access" answer stays *no restrictions*), Android-only
+for now (iOS would also need Sign in with Apple), and hidden unless the build
+has `GOOGLE_WEB_CLIENT_ID`.
+
+1. **Google Cloud Console** → APIs & Services → **OAuth consent screen**: set
+   the app name, support email and the privacy policy URL; scopes `email`,
+   `profile`, `openid`. Publish it (Testing mode only lets listed test users in).
+2. **Credentials → Create OAuth client ID → Web application.** Name it
+   "Supabase". Copy its **Client ID** and **Client secret**.
+3. **Create OAuth client ID → Android**, once per signing key, with package
+   `com.perfeos.step_quest` (or the new id if you rename it) and the key's
+   **SHA-1**:
+   - debug key: `keytool -list -v -alias androiddebugkey -keystore ~/.android/debug.keystore -storepass android`
+   - your upload key: `keytool -list -v -alias upload -keystore ~/the-walk-culture-upload.jks`
+   - **Play's app signing key**: Play Console → Setup → App signing → SHA-1.
+     Store installs are signed with this one, so without it sign-in fails for
+     everyone who installed from Play.
+4. **Supabase → Authentication → Providers → Google**: enable it, paste the Web
+   client ID and secret, and under **Authorized Client IDs** add the Web client
+   ID (plus the Android ones). Leave nonce checks on — the app sends no nonce.
+5. **Supabase → Authentication → Settings → Allow manual linking: ON.** Linking
+   an identity to the anonymous account is refused without it.
+6. Build with the Web client ID (not the Android one):
+
+   ```bash
+   flutter build appbundle --release \
+     --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=... \
+     --dart-define=GOOGLE_WEB_CLIENT_ID=1234-abc.apps.googleusercontent.com
+   ```
+
+Play Console → **Data safety**: declare *Email address* (collected, optional,
+for account management) and *User IDs*.
+
 ---
 
 ## 2. Rewarded ads — AdMob ($0, earns money)
