@@ -67,11 +67,17 @@ class StorePurchaseService implements PurchaseService {
         result = PurchaseStatus.unavailable;
       } else if (p.status == iap.PurchaseStatus.purchased ||
           p.status == iap.PurchaseStatus.restored) {
-        // The only thing that grants: the server verifying the token.
-        final token = p.verificationData.serverVerificationData;
+        // The only thing that grants: the server verifying the purchase with
+        // the store. Android sends Play's purchase token; iOS sends the
+        // StoreKit 2 transaction id, which the server looks up with Apple.
+        final ios = defaultTargetPlatform == TargetPlatform.iOS;
+        final token = ios
+            ? (p.purchaseID ?? '')
+            : p.verificationData.serverVerificationData;
         final v = await _cloud.validatePurchase(
           productId: p.productID,
           purchaseToken: token,
+          platform: ios ? 'app_store' : 'google_play',
         );
         switch (v.outcome) {
           case ValidationOutcome.granted:
@@ -121,6 +127,18 @@ class StorePurchaseService implements PurchaseService {
       debugPrint('finishing purchase failed: $e');
     }
   }
+  @override
+  Future<bool> restore() async {
+    if (!await _iap.isAvailable()) return false;
+    try {
+      await _iap.restorePurchases();
+      return true;
+    } catch (e) {
+      debugPrint('restorePurchases failed: $e');
+      return false;
+    }
+  }
+
   @override
   Future<Map<String, String>> priceLabels(Iterable<String> ids) async {
     if (!await _iap.isAvailable()) return const {};

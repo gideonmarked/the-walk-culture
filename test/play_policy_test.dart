@@ -20,9 +20,16 @@ void main() {
       });
     });
 
-    test('terms say it auto-renews and how to cancel', () {
-      expect(kVipTermsText, contains('auto-renewing'));
-      expect(kVipTermsText, contains('Cancel any time in Google Play'));
+    test('terms say it auto-renews and how to cancel, per store', () {
+      final android = vipTermsText(ios: false);
+      expect(android, contains('auto-renewing'));
+      expect(android, contains('Cancel any time in Google Play'));
+
+      final ios = vipTermsText(ios: true);
+      expect(ios, contains('auto-renewing'));
+      expect(ios, contains('your Apple ID'));
+      expect(ios, contains('Subscriptions'));
+      expect(ios, isNot(contains('Google Play')));
     });
   });
 

@@ -59,6 +59,11 @@ abstract class PurchaseService {
   /// falls back to its own label). Empty when there's no real store.
   Future<Map<String, String>> priceLabels(Iterable<String> storeProductIds);
 
+  /// Ask the store to re-deliver what the player owns; deliveries arrive
+  /// through the purchase stream like new purchases. False when there's no
+  /// store to ask.
+  Future<bool> restore();
+
   /// True for the placeholder. The Store screen surfaces this loudly so a
   /// simulated grant is never mistaken for a real charge.
   bool get isSimulated;
@@ -90,6 +95,10 @@ class SimulatedPurchaseService implements PurchaseService {
   // No real store → no localized prices; the UI keeps its own labels.
   @override
   Future<Map<String, String>> priceLabels(Iterable<String> ids) async => const {};
+
+  // Nothing real was ever bought, so there's nothing to restore.
+  @override
+  Future<bool> restore() async => true;
 }
 
 /// Real billing in release; the simulator only in debug.

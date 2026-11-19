@@ -12,7 +12,7 @@ const String kDeleteAccountWarning =
     'Pebbles, items, streaks, friends, groups you own, shared prayer requests, '
     'and everything the app stored on this phone, including your journal.\n\n'
     'This cannot be undone. Deleting your account does not cancel a VIP '
-    'subscription — cancel that in Google Play.';
+    'subscription — cancel that in Google Play or your Apple ID settings.';
 
 /// Ask, then delete the account and reset the app to a fresh install.
 Future<void> confirmAndDeleteAccount(BuildContext context, WidgetRef ref) async {

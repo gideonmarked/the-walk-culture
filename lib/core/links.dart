@@ -9,6 +9,8 @@ const String kPrivacyPolicyUrl = '$kSiteBase/privacy.html';
 const String kTermsUrl = '$kSiteBase/terms.html';
 const String kDeleteAccountUrl = '$kSiteBase/delete-account.html';
 
-/// Where Android users manage (and cancel) Play subscriptions.
+/// Where players manage (and cancel) subscriptions on each store.
 const String kPlaySubscriptionsUrl =
     'https://play.google.com/store/account/subscriptions';
+const String kAppStoreSubscriptionsUrl =
+    'https://apps.apple.com/account/subscriptions';

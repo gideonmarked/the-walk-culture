@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -119,6 +120,20 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
     setState(() => _busy = false);
   }
 
+  /// Ask the store to re-deliver everything this player owns (an active VIP
+  /// subscription, or a pack whose delivery never finished). Each comes back
+  /// through the normal purchase stream and is verified by the server.
+  Future<void> _restore() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final ok = await ref.read(purchaseServiceProvider).restore();
+    if (!mounted) return;
+    setState(() => _busy = false);
+    _toast(ok
+        ? 'Checking the store — anything you own will be restored'
+        : 'Store unavailable — try again later');
+  }
+
   void _reportUnfinished(PurchaseStatus status) {
     if (status == PurchaseStatus.unavailable) {
       _toast('Store unavailable — billing not configured yet');
@@ -195,6 +210,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
                 premium: premium,
                 onBuy: _buyVip,
                 priceOf: (plan) => _price(plan.storeProductId, plan.priceLabel),
+                onRestore: _restore,
               ),
               const SizedBox(height: 8),
               _AdRewardCard(
@@ -257,15 +273,20 @@ class _SimulatedBanner extends StatelessWidget {
 
 class _VipSection extends StatelessWidget {
   const _VipSection(
-      {required this.premium, required this.onBuy, required this.priceOf});
+      {required this.premium,
+      required this.onBuy,
+      required this.priceOf,
+      required this.onRestore});
 
   final PremiumState premium;
   final Future<void> Function(VipPlan) onBuy;
   final String Function(VipPlan) priceOf;
+  final VoidCallback onRestore;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final ios = defaultTargetPlatform == TargetPlatform.iOS;
     return Card(
       color: premium.isVip ? scheme.secondaryContainer : null,
       child: Padding(
@@ -336,13 +357,21 @@ class _VipSection extends StatelessWidget {
                 ),
               ),
             const SizedBox(height: 4),
-            Text(kVipTermsText, style: Theme.of(context).textTheme.bodySmall),
+            Text(vipTermsText(ios: ios),
+                style: Theme.of(context).textTheme.bodySmall),
             Wrap(
               spacing: 4,
               children: [
                 TextButton(
-                  onPressed: () => openLink(context, kPlaySubscriptionsUrl),
+                  onPressed: () => openLink(context,
+                      ios ? kAppStoreSubscriptionsUrl : kPlaySubscriptionsUrl),
                   child: const Text('Manage subscriptions'),
+                ),
+                // App Store guideline 3.1.1: restorable purchases (VIP) need a
+                // visible Restore button.
+                TextButton(
+                  onPressed: onRestore,
+                  child: const Text('Restore purchases'),
                 ),
                 TextButton(
                   onPressed: () => openLink(context, kTermsUrl),
