@@ -115,17 +115,17 @@ class OnboardingController extends StateNotifier<bool> {
   OnboardingController() : super(false) {
     _load();
   }
-  static const _key = 'stepquest_onboarded_v1';
+  static const prefsKey = 'stepquest_onboarded_v1';
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    state = prefs.getBool(_key) ?? false;
+    state = prefs.getBool(prefsKey) ?? false;
   }
 
   Future<void> complete() async {
     state = true;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_key, true);
+    await prefs.setBool(prefsKey, true);
   }
 }
 
@@ -393,6 +393,17 @@ class PlayerController extends StateNotifier<PlayerState> {
     _cloudDebounce = Timer(const Duration(seconds: 10), () {
       cloud.pushSave(state.toJson());
     });
+  }
+
+  /// Stop syncing and backing up before the signed-in account changes (account
+  /// deletion, switching to Google, signing out). Without this, a pending
+  /// debounced backup could fire after the switch and push THIS state into the
+  /// NEW account. The controller is rebuilt afterwards (rebuildLocalState).
+  void prepareForAccountChange() {
+    stopAutoSync();
+    _socialPoll?.cancel();
+    _cloudDebounce?.cancel();
+    _restorePending = true; // blocks _scheduleCloudBackup for this instance
   }
 
   static const _restorePendingKey = 'stepquest_restore_pending_v1';

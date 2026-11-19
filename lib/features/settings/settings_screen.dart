@@ -15,6 +15,7 @@ import '../../state/feedback_providers.dart';
 import '../../widgets/open_link.dart';
 import '../feedback/feedback_screen.dart';
 import 'delete_account.dart';
+import 'google_account_tile.dart';
 import '../stats/statistics_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -111,6 +112,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const Divider(),
           const _SectionHeader('Privacy & account'),
+          const GoogleAccountTile(),
           ListTile(
             leading: const Icon(Icons.privacy_tip_outlined),
             title: const Text('Privacy policy'),

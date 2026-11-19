@@ -3,11 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../services/cloud/account_service.dart';
 import '../../state/app_providers.dart';
-import '../../state/crash_providers.dart';
-import '../../state/feedback_providers.dart';
-import '../../state/gratitude_journal.dart';
-import '../../state/notifications.dart';
-import '../../state/premium_providers.dart';
+import '../../state/local_reset.dart';
 
 /// What the confirmation dialog tells the player will be deleted. Kept in step
 /// with docs/delete-account.html and delete_my_account() in supabase/safety.sql.
@@ -52,10 +48,12 @@ Future<void> confirmAndDeleteAccount(BuildContext context, WidgetRef ref) async 
     ),
   );
 
+  ref.read(playerControllerProvider.notifier).prepareForAccountChange();
   final error = await ref.read(accountServiceProvider).deleteAccount();
   navigator.pop(); // the progress dialog
 
   if (error != null) {
+    rebuildLocalState(ref); // nothing was deleted: resume syncing and backups
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(error)));
@@ -65,18 +63,7 @@ Future<void> confirmAndDeleteAccount(BuildContext context, WidgetRef ref) async 
   // Back to the root, then rebuild every piece of local state from the now
   // empty storage — the app behaves like a fresh install (onboarding first).
   navigator.popUntil((route) => route.isFirst);
-  for (final p in <ProviderOrFamily>[
-    playerControllerProvider,
-    premiumControllerProvider,
-    gratitudeJournalProvider,
-    notificationsProvider,
-    feedbackControllerProvider,
-    crashControllerProvider,
-    healthSyncProvider,
-    onboardingProvider,
-  ]) {
-    ref.invalidate(p);
-  }
+  rebuildLocalState(ref);
   messenger
     ..hideCurrentSnackBar()
     ..showSnackBar(
