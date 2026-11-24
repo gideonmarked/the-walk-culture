@@ -11,9 +11,15 @@ import '../../services/rewarded_ad_service.dart';
 import '../../state/app_providers.dart';
 import '../../state/premium_providers.dart';
 import '../../widgets/open_link.dart';
+import '../shop/shop_screen.dart';
 
+/// The Store: two tabs. **Shop** spends Pebbles on cosmetics; **VIP** is the
+/// real-money side (subscription, rewarded ad, Pebble packs).
 class StoreScreen extends ConsumerStatefulWidget {
-  const StoreScreen({super.key});
+  const StoreScreen({super.key, this.initialTab = 0});
+
+  /// 0 = Shop, 1 = VIP.
+  final int initialTab;
 
   @override
   ConsumerState<StoreScreen> createState() => _StoreScreenState();
@@ -107,10 +113,12 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
 
   Future<void> _buyPack(CurrencyPack pack) async {
     if (_busy) return;
-    if (!await _confirmSimulated('Buy ${pack.label}', _price(pack.storeProductId, pack.priceLabel))) return;
+    final price = _price(pack.storeProductId, pack.priceLabel);
+    if (!await _confirmSimulated('Buy ${pack.label}', price)) return;
     if (!mounted) return;
     setState(() => _busy = true);
-    final status = await ref.read(purchaseServiceProvider).buy(pack.storeProductId);
+    final status =
+        await ref.read(purchaseServiceProvider).buy(pack.storeProductId);
     if (!mounted) return;
     if (status == PurchaseStatus.purchased) {
       _toast('+${_fmt.format(pack.steps)} Pebbles added to your wallet');
@@ -145,10 +153,12 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
 
   Future<void> _buyVip(VipPlan plan) async {
     if (_busy) return;
-    if (!await _confirmSimulated(plan.label, _price(plan.storeProductId, plan.priceLabel))) return;
+    final price = _price(plan.storeProductId, plan.priceLabel);
+    if (!await _confirmSimulated(plan.label, price)) return;
     if (!mounted) return;
     setState(() => _busy = true);
-    final status = await ref.read(purchaseServiceProvider).buy(plan.storeProductId);
+    final status =
+        await ref.read(purchaseServiceProvider).buy(plan.storeProductId);
     if (!mounted) return;
     if (status == PurchaseStatus.purchased) {
       _toast('VIP active — enjoy your perks!');
@@ -177,7 +187,8 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
       // fall back to the local cap and reconcile on the next online claim.
       var allowed = true;
       if (cloud.isReady) {
-        allowed = await cloud.claimAdReward(rewardSteps: kAdRewardSteps) != null;
+        allowed =
+            await cloud.claimAdReward(rewardSteps: kAdRewardSteps) != null;
         if (!allowed) {
           _toast("Today's ad reward limit reached");
         }
@@ -198,46 +209,60 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
     final premium = ref.watch(premiumControllerProvider);
     final simulated = ref.watch(purchaseServiceProvider).isSimulated;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Store')),
-      body: Stack(
-        children: [
-          ListView(
-            padding: const EdgeInsets.all(12),
+    return DefaultTabController(
+      length: 2,
+      initialIndex: widget.initialTab,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Store'),
+          bottom: const TabBar(tabs: [
+            Tab(icon: Icon(Icons.checkroom_outlined), text: 'Shop'),
+            Tab(icon: Icon(Icons.workspace_premium_outlined), text: 'VIP'),
+          ]),
+        ),
+        body: TabBarView(children: [
+          const ShopScreen(),
+          Stack(
             children: [
-              if (simulated) const _SimulatedBanner(),
-              _VipSection(
-                premium: premium,
-                onBuy: _buyVip,
-                priceOf: (plan) => _price(plan.storeProductId, plan.priceLabel),
-                onRestore: _restore,
+              ListView(
+                padding: const EdgeInsets.all(12),
+                children: [
+                  if (simulated) const _SimulatedBanner(),
+                  _VipSection(
+                    premium: premium,
+                    onBuy: _buyVip,
+                    priceOf: (plan) =>
+                        _price(plan.storeProductId, plan.priceLabel),
+                    onRestore: _restore,
+                  ),
+                  const SizedBox(height: 8),
+                  _AdRewardCard(
+                    premium: premium,
+                    onWatch: _watchAd,
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(4, 12, 4, 4),
+                    child: Text('Pebble packs',
+                        style: Theme.of(context).textTheme.titleMedium),
+                  ),
+                  for (final pack in kCurrencyPacks)
+                    _PackTile(
+                        pack: pack,
+                        fmt: _fmt,
+                        price: _price(pack.storeProductId, pack.priceLabel),
+                        onBuy: () => _buyPack(pack)),
+                  const SizedBox(height: 24),
+                ],
               ),
-              const SizedBox(height: 8),
-              _AdRewardCard(
-                premium: premium,
-                onWatch: _watchAd,
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(4, 12, 4, 4),
-                child: Text('Pebble packs',
-                    style: Theme.of(context).textTheme.titleMedium),
-              ),
-              for (final pack in kCurrencyPacks)
-                _PackTile(
-                    pack: pack,
-                    fmt: _fmt,
-                    price: _price(pack.storeProductId, pack.priceLabel),
-                    onBuy: () => _buyPack(pack)),
-              const SizedBox(height: 24),
+              if (_busy)
+                const ColoredBox(
+                  color: Color(0x66000000),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
             ],
           ),
-          if (_busy)
-            const ColoredBox(
-              color: Color(0x66000000),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-        ],
+        ]),
       ),
     );
   }
@@ -332,7 +357,8 @@ class _VipSection extends StatelessWidget {
                           Row(
                             children: [
                               Text(plan.label,
-                                  style: Theme.of(context).textTheme.titleSmall),
+                                  style:
+                                      Theme.of(context).textTheme.titleSmall),
                               if (plan.highlight) ...[
                                 const SizedBox(width: 6),
                                 const Chip(
@@ -398,9 +424,8 @@ class _AdRewardCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final watched = premium.adRewardsDay == _todayKey()
-        ? premium.adRewardsToday
-        : 0;
+    final watched =
+        premium.adRewardsDay == _todayKey() ? premium.adRewardsToday : 0;
     final limit = premium.adRewardLimit;
     final canWatch = watched < limit;
 

@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -26,9 +26,12 @@ void main() {
     await tester.tap(find.text('Skip for now'));
     await tester.pumpAndSettle();
 
-    // Lands on the main shell.
-    expect(find.text('The Walk Culture'), findsOneWidget); // Home app bar title
-    expect(find.text('Shop'), findsWidgets); // nav destination label
+    // Lands on the main shell: three destinations, Home's top bar has no title.
+    expect(find.byType(NavigationDestination), findsNWidgets(3));
+    expect(find.text('Profile'), findsOneWidget);
+    expect(find.text('The Walk Culture'), findsNothing);
+    expect(find.byTooltip('Quests'), findsOneWidget);
+    expect(find.byTooltip('Store'), findsOneWidget);
 
     // Unmount, then dispose providers so the auto-sync timer is cancelled.
     await tester.pumpWidget(const SizedBox());

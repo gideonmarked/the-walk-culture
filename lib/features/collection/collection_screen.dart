@@ -28,7 +28,8 @@ const List<ItemSlot> _collectionOrder = [
   ItemSlot.home,
 ];
 
-/// A "collect them all" gallery of every cosmetic — owned in colour, locked
+/// The Closet, a room in the House: a "collect them all" gallery of every
+/// cosmetic — owned in colour, locked
 /// items greyed out. Fed by the Shop and Mystery Spheres.
 class CollectionScreen extends ConsumerWidget {
   const CollectionScreen({super.key});
@@ -41,7 +42,7 @@ class CollectionScreen extends ConsumerWidget {
     final pct = total == 0 ? 0 : (have * 100 / total).round();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Collection')),
+      appBar: AppBar(title: const Text('Closet')),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [

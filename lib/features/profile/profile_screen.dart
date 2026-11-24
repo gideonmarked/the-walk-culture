@@ -8,7 +8,8 @@ import '../house/house_screen.dart';
 import '../social/account_code_card.dart';
 import '../social/social_screen.dart';
 
-/// Profile hub with three tabs: Avatar (character), Home (the room), and Social
+/// Profile hub with three tabs: Avatar (character), House (the Closet, the
+/// Trophy Room and the living room), and Social
 /// (your shareable code + friends & groups).
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -23,7 +24,7 @@ class ProfileScreen extends StatelessWidget {
           bottom: const TabBar(
             tabs: [
               Tab(icon: Icon(Icons.face), text: 'Avatar'),
-              Tab(icon: Icon(Icons.cottage), text: 'Home'),
+              Tab(icon: Icon(Icons.cottage), text: 'House'),
               Tab(icon: Icon(Icons.people_outline), text: 'Social'),
             ],
           ),
