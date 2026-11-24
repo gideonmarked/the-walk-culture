@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/health.dart';
+import '../../../core/spheres.dart';
 import '../../../state/app_providers.dart';
+import '../../spheres/spheres_screen.dart' show kRarityColor;
 
-/// Character health + streak. Replaces the old user-set daily goal: the player
-/// can't choose a target, so this card's job is to make tomorrow's consequence
-/// obvious — hold your level, climb one, or slide one.
+/// Today's walking at a glance: health level + streak, a progress bar toward
+/// the next Mystery Sphere (coloured by the rarity being filled), and what
+/// today means for tomorrow's health level.
 class HealthCard extends ConsumerWidget {
   const HealthCard({super.key});
 
@@ -18,14 +20,14 @@ class HealthCard extends ConsumerWidget {
     final steps = player.todaySteps;
     final level = healthLevelInfo(player.healthLevel);
 
-    // Bar tracks the run to a climb; below the hold line it tracks the run to
-    // safety instead, so the "you're about to slip" state has its own scale.
-    final holding = steps >= kHoldSteps;
-    final progress = holding
-        ? (steps / kClimbSteps).clamp(0.0, 1.0)
-        : (steps / kHoldSteps).clamp(0.0, 1.0);
+    // The live pedometer ticks between health syncs, so the count and the bar
+    // move while you walk (this replaced the separate "Today" card).
+    final shown = ref.watch(liveStepsProvider) ?? steps;
+    final spheres = sphereProgress(shown);
+    final barColor = kRarityColor[spheres.rarity] ?? Colors.grey;
 
-    final (String status, Color color) = _status(context, player.healthLevel, steps);
+    final (String status, Color color) =
+        _status(context, player.healthLevel, steps);
 
     return Card(
       child: Padding(
@@ -52,18 +54,42 @@ class HealthCard extends ConsumerWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: LinearProgressIndicator(
-                value: progress,
+                value: spheres.fraction,
                 minHeight: 10,
-                color: color,
+                color: barColor,
+                backgroundColor: barColor.withValues(alpha: 0.18),
               ),
             ),
             const SizedBox(height: 8),
-            Text(status, style: Theme.of(context).textTheme.bodyMedium),
-            const SizedBox(height: 2),
-            Text(
-              '${fmt.format(steps)} steps today',
-              style: Theme.of(context).textTheme.bodySmall,
+            Text.rich(
+              TextSpan(
+                style: Theme.of(context).textTheme.bodyMedium,
+                children: [
+                  TextSpan(
+                    text: '${fmt.format(shown)} steps',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  if (spheres.allUnlocked)
+                    const TextSpan(text: ' - every sphere unlocked today')
+                  else ...[
+                    TextSpan(
+                        text:
+                            ' - ${fmt.format(spheres.remaining)} more to unlock '),
+                    TextSpan(
+                      text: spheres.nextLabel,
+                      style: TextStyle(
+                          color: barColor, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ],
+              ),
             ),
+            const SizedBox(height: 4),
+            Text(status,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: color)),
           ],
         ),
       ),
@@ -77,11 +103,16 @@ class HealthCard extends ConsumerWidget {
 
     if (steps >= kClimbSteps) {
       if (isTopHealth(levelIndex)) {
-        return ('Peak health held — nothing above ${healthLevelInfo(levelIndex).name}',
-            scheme.tertiary);
+        return (
+          'Peak health held — nothing above ${healthLevelInfo(levelIndex).name}',
+          scheme.tertiary
+        );
       }
       final next = healthLevelInfo(levelIndex + 1);
-      return ('Climbing to ${next.name} ${next.emoji} tomorrow', scheme.tertiary);
+      return (
+        'Climbing to ${next.name} ${next.emoji} tomorrow',
+        scheme.tertiary
+      );
     }
 
     if (steps >= kHoldSteps) {

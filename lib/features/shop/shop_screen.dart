@@ -61,8 +61,8 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
     final items =
         _filter == null ? all : all.where((i) => i.slot == _filter).toList();
 
+    // Shown as the Store's "Shop" tab, under the Store's own app bar.
     return Scaffold(
-      appBar: AppBar(title: const Text('Shop')),
       body: Column(
         children: [
           // Category filter chips.

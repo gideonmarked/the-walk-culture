@@ -22,14 +22,14 @@ void main() {
     await tester.tap(find.text('Skip for now')); // past onboarding
     await tester.pumpAndSettle();
 
-    // The Spheres tab is gone: Home / Quests / Pass / Shop / Profile, none of
-    // them Spheres.
-    expect(find.byType(NavigationDestination), findsNWidgets(5));
+    // No Spheres tab: the bar is Home / Pass / Profile.
+    expect(find.byType(NavigationDestination), findsNWidgets(3));
     expect(find.text('Spheres'), findsNothing);
     expect(find.text('Pass'), findsOneWidget);
 
-    // Quests now leads with the spheres section, quest list underneath.
-    await tester.tap(find.text('Quests'));
+    // Quests opens from Home's top bar and leads with the spheres section,
+    // quest list underneath.
+    await tester.tap(find.byTooltip('Quests'));
     await tester.pumpAndSettle();
 
     expect(find.text('Daily Quests'), findsOneWidget); // app bar
@@ -38,19 +38,23 @@ void main() {
     expect(find.text('Mystery Spheres'), findsOneWidget); // section heading
     expect(find.textContaining('Reach each step goal'), findsOneWidget);
 
-    // ...and they sit above the quest list: the quest blurb starts off-screen
-    // and only appears once scrolled past the spheres.
-    expect(find.textContaining('Complete quests'), findsNothing);
+    // ...and they sit above the quest list.
     await tester.scrollUntilVisible(
       find.textContaining('Complete quests'),
       300,
       scrollable: find.byType(Scrollable).first,
     );
     expect(find.textContaining('Complete quests'), findsOneWidget);
+    expect(
+        tester.getTopLeft(find.textContaining('Complete quests')).dy,
+        greaterThan(tester.getTopLeft(find.text('Mystery Spheres')).dy));
 
-    // Only the shell's and Quests' own Scaffolds — the section brought none,
-    // i.e. it's embedded in the quests scroll view rather than pushed as a route.
-    expect(find.byType(Scaffold), findsNWidgets(2));
+    // The section brought no Scaffold of its own: it's embedded in the quests
+    // scroll view, so its only Scaffold ancestor is the Quests screen's.
+    expect(
+        find.ancestor(
+            of: find.text('Mystery Spheres'), matching: find.byType(Scaffold)),
+        findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
     container.dispose();

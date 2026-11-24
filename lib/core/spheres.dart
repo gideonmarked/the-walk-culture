@@ -75,6 +75,85 @@ const List<Rarity> kRarityOrder = [
   Rarity.celestial,
 ];
 
+/// Where today's steps stand on the sphere ladder: the segment being filled,
+/// from the last sphere unlocked to the next one. Drives Home's progress bar,
+/// which is coloured by [rarity].
+class SphereProgress {
+  const SphereProgress({
+    required this.steps,
+    required this.next,
+    required this.fromSteps,
+    required this.toSteps,
+    required this.rarity,
+  });
+
+  final int steps;
+
+  /// The next sphere to unlock today, or null once every step sphere is open.
+  final SphereTier? next;
+
+  /// Step count where the current segment starts (the previous sphere's
+  /// threshold, or 0) and ends (the next sphere's threshold).
+  final int fromSteps;
+  final int toSteps;
+
+  /// The rarity being filled toward (or the top one when all are unlocked).
+  final Rarity rarity;
+
+  bool get allUnlocked => next == null;
+
+  int get remaining => allUnlocked ? 0 : toSteps - steps;
+
+  /// How full the current segment is, 0..1.
+  double get fraction => allUnlocked || toSteps <= fromSteps
+      ? 1.0
+      : ((steps - fromSteps) / (toSteps - fromSteps)).clamp(0.0, 1.0);
+
+  /// What unlocking [next] is called: its rarity ("Epic"), or the sphere's own
+  /// name when an earlier sphere already has that rarity ("Mythic" rather than
+  /// a second "Legendary").
+  String get nextLabel {
+    final n = next;
+    if (n == null) return '';
+    final repeat = kStepSphereTiers
+        .takeWhile((t) => t != n)
+        .any((t) => t.baseRarity == n.baseRarity);
+    if (repeat) return n.name.replaceAll(' Sphere', '');
+    final name = n.baseRarity.name;
+    return name[0].toUpperCase() + name.substring(1);
+  }
+}
+
+/// The spheres unlocked by walking (not the real-money one), lowest first.
+List<SphereTier> get kStepSphereTiers =>
+    kSphereTiers.where((t) => !t.isRealMoney).toList()
+      ..sort((a, b) => a.stepCost.compareTo(b.stepCost));
+
+/// Today's position on the sphere ladder for [steps] walked. Pure/testable.
+SphereProgress sphereProgress(int steps) {
+  final tiers = kStepSphereTiers;
+  var from = 0;
+  for (final t in tiers) {
+    if (steps < t.stepCost) {
+      return SphereProgress(
+        steps: steps,
+        next: t,
+        fromSteps: from,
+        toSteps: t.stepCost,
+        rarity: t.baseRarity,
+      );
+    }
+    from = t.stepCost;
+  }
+  return SphereProgress(
+    steps: steps,
+    next: null,
+    fromSteps: from,
+    toSteps: from,
+    rarity: tiers.last.baseRarity,
+  );
+}
+
 /// Roll a rarity for [tier] given a uniform [roll] in [0, 1). Pure/testable.
 Rarity rollSphereRarity(SphereTier tier, double roll) =>
     rollRarityFromOdds(tier.odds, roll, fallback: tier.baseRarity);

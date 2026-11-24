@@ -7,8 +7,6 @@ import '../../state/premium_providers.dart';
 import '../home/home_screen.dart';
 import '../pass/travel_pass_screen.dart';
 import '../profile/profile_screen.dart';
-import '../quests/quests_screen.dart';
-import '../shop/shop_screen.dart';
 
 class RootScaffold extends ConsumerStatefulWidget {
   const RootScaffold({super.key});
@@ -29,11 +27,11 @@ class _RootScaffoldState extends ConsumerState<RootScaffold> {
     ref.read(feedbackControllerProvider);
   }
 
+  // Quests and the Shop moved to Home's top bar (the Shop now lives inside
+  // the Store, next to VIP), leaving three destinations here.
   static const _pages = [
     HomeScreen(),
-    QuestsScreen(),
     TravelPassScreen(),
-    ShopScreen(),
     ProfileScreen(),
   ];
 
@@ -43,7 +41,8 @@ class _RootScaffoldState extends ConsumerState<RootScaffold> {
     // the whole earned VIP column claimable at once.
     ref.watch(playerControllerProvider);
     ref.watch(premiumControllerProvider);
-    final claimable = ref.read(playerControllerProvider.notifier).passClaimableCount;
+    final claimable =
+        ref.read(playerControllerProvider.notifier).passClaimableCount;
 
     return Scaffold(
       body: _pages[_index],
@@ -55,10 +54,6 @@ class _RootScaffoldState extends ConsumerState<RootScaffold> {
               icon: Icon(Icons.home_outlined),
               selectedIcon: Icon(Icons.home),
               label: 'Home'),
-          const NavigationDestination(
-              icon: Icon(Icons.flag_outlined),
-              selectedIcon: Icon(Icons.flag),
-              label: 'Quests'),
           NavigationDestination(
             icon: Badge(
               isLabelVisible: claimable > 0,
@@ -72,10 +67,6 @@ class _RootScaffoldState extends ConsumerState<RootScaffold> {
             ),
             label: 'Pass',
           ),
-          const NavigationDestination(
-              icon: Icon(Icons.storefront_outlined),
-              selectedIcon: Icon(Icons.storefront),
-              label: 'Shop'),
           const NavigationDestination(
               icon: Icon(Icons.person_outline),
               selectedIcon: Icon(Icons.person),
