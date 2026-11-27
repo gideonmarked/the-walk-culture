@@ -47,7 +47,7 @@ The names run on a walking-pace theme, and the character's **posture** rises wit
 them — from laying on the floor, through crawling and hunching, up to walking
 tall (the top pose animated later):
 
-`Idle · Sluggish · Strolling · Steady · Brisk · Swift · Soaring`
+`Drained · Worn · Weary · Steady · Vigorous · Radiant · Aura`
 `(laying → crawling → hunched → upright walking →→ striding)`
 
 Never more than one level of movement per day, clamped at both ends. It is

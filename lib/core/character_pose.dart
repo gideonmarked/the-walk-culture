@@ -25,13 +25,13 @@ class CharacterPose {
 /// levels share the `walk` frames, so clothing is drawn once; they differ only
 /// in pace.
 const List<CharacterPose> kHealthPoses = [
-  CharacterPose('lying', speed: 0.6, baseOnly: true), // Idle
-  CharacterPose('crawl', speed: 0.7, baseOnly: true), // Sluggish
-  CharacterPose('hunched', speed: 0.8, baseOnly: true), // Strolling
+  CharacterPose('lying', speed: 0.6, baseOnly: true), // Drained
+  CharacterPose('crawl', speed: 0.7, baseOnly: true), // Worn
+  CharacterPose('hunched', speed: 0.8, baseOnly: true), // Weary
   CharacterPose('walk', speed: 1.0), // Steady
-  CharacterPose('walk', speed: 1.25), // Brisk
-  CharacterPose('walk', speed: 1.5), // Swift
-  CharacterPose('walk', speed: 1.8), // Soaring
+  CharacterPose('walk', speed: 1.25), // Vigorous
+  CharacterPose('walk', speed: 1.5), // Radiant
+  CharacterPose('walk', speed: 1.8), // Aura
 ];
 
 CharacterPose poseForHealth(int level) => kHealthPoses[clampHealthLevel(level)];

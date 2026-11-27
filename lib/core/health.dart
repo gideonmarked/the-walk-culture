@@ -17,15 +17,16 @@ class HealthLevel {
 
 /// Worst → best. Index into this list IS the level.
 const List<HealthLevel> kHealthLevels = [
-  // The name is a walking-pace theme; the art shows the matching POSTURE, from
-  // laying flat (Idle) up to striding tall (Soaring, animated later).
-  HealthLevel('Idle', '🛌'), // laying down
-  HealthLevel('Sluggish', '🐌'), // crawling
-  HealthLevel('Strolling', '🚶'), // hunched, trudging
-  HealthLevel('Steady', '🙂'), // upright, walking
-  HealthLevel('Brisk', '🏃'), // brisk walk
-  HealthLevel('Swift', '💨'), // striding
-  HealthLevel('Soaring', '🦅'), // upright & moving (animated later)
+  // Each name describes the character's condition, and the art shows the
+  // matching POSTURE: lying flat (Drained) up to standing in a glow (Aura).
+  // Poses live in lib/core/character_pose.dart.
+  HealthLevel('Drained', '🪫'), // lying down
+  HealthLevel('Worn', '🥱'), // crawling
+  HealthLevel('Weary', '😮‍💨'), // hunched, trudging
+  HealthLevel('Steady', '🙂'), // upright
+  HealthLevel('Vigorous', '💪'), // upright
+  HealthLevel('Radiant', '✨'), // upright
+  HealthLevel('Aura', '🌟'), // upright, the top
 ];
 
 /// New players start in the middle, with room to fall as well as climb.
@@ -46,7 +47,8 @@ int applyDailyHealth(int level, int daySteps) {
   return clampHealthLevel(current - 1);
 }
 
-HealthLevel healthLevelInfo(int level) => kHealthLevels[clampHealthLevel(level)];
+HealthLevel healthLevelInfo(int level) =>
+    kHealthLevels[clampHealthLevel(level)];
 
 bool isTopHealth(int level) => clampHealthLevel(level) == _maxLevel;
 bool isBottomHealth(int level) => clampHealthLevel(level) == 0;

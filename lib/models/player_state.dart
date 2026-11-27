@@ -237,7 +237,7 @@ class PlayerState {
       spentSteps: (json['spentSteps'] as num?)?.toInt() ?? 0,
       todaySteps: (json['todaySteps'] as num?)?.toInt() ?? 0,
       // Saves written before the health ladder existed have no level — those
-      // players start at Steady rather than inheriting a bogus 0 (Idle).
+      // players start at Steady rather than inheriting a bogus 0 (Drained).
       healthLevel: clampHealthLevel(
           (json['healthLevel'] as num?)?.toInt() ?? kStartHealthLevel),
       streakCurrent: (json['streakCurrent'] as num?)?.toInt() ?? 0,
