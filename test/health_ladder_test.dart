@@ -27,21 +27,21 @@ void main() {
     });
 
     test('clamps at both ends of the ladder', () {
-      expect(applyDailyHealth(0, 0), 0); // Idle can't go lower
-      expect(applyDailyHealth(6, kClimbSteps), 6); // Soaring can't go higher
+      expect(applyDailyHealth(0, 0), 0); // Drained can't go lower
+      expect(applyDailyHealth(6, kClimbSteps), 6); // Aura can't go higher
       expect(clampHealthLevel(-5), 0);
       expect(clampHealthLevel(99), kHealthLevels.length - 1);
     });
 
     test('the ladder runs worst to best', () {
       expect(kHealthLevels.map((l) => l.name).toList(), [
-        'Idle',
-        'Sluggish',
-        'Strolling',
+        'Drained',
+        'Worn',
+        'Weary',
         'Steady',
-        'Brisk',
-        'Swift',
-        'Soaring',
+        'Vigorous',
+        'Radiant',
+        'Aura',
       ]);
       expect(healthLevelInfo(kStartHealthLevel).name, 'Steady');
       expect(isBottomHealth(0), isTrue);
@@ -82,7 +82,7 @@ void main() {
       await container.read(playerControllerProvider.notifier).addSimulatedSteps(0);
 
       final state = container.read(playerControllerProvider);
-      expect(state.healthLevel, 4); // → Brisk
+      expect(state.healthLevel, 4); // → Vigorous
       expect(state.todaySteps, 0); // fresh day
       expect(state.claimedQuests, isEmpty); // dailies reset with the roll
       expect(state.openedSpheres, isEmpty);
@@ -104,7 +104,7 @@ void main() {
 
       await container.read(playerControllerProvider.notifier).addSimulatedSteps(0);
 
-      expect(container.read(playerControllerProvider).healthLevel, 2); // → Strolling
+      expect(container.read(playerControllerProvider).healthLevel, 2); // → Weary
     });
 
     test('a brand-new save is not punished for having no yesterday', () async {
@@ -117,7 +117,7 @@ void main() {
 
       await container.read(playerControllerProvider.notifier).addSimulatedSteps(0);
 
-      // Would be Sluggish/Strolling if the empty "yesterday" (0 steps) were graded.
+      // Would be Worn/Weary if the empty "yesterday" (0 steps) were graded.
       expect(container.read(playerControllerProvider).healthLevel,
           kStartHealthLevel);
     });

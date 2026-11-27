@@ -1,11 +1,16 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/character_pose.dart';
+import '../../core/sprite_palette.dart';
+import '../../core/sprite_sheet.dart';
 import '../../data/shop_catalog.dart';
 import '../../models/shop_item.dart';
 import '../../state/app_providers.dart';
+import '../../widgets/pixel_sprite.dart';
 
 /// Where a slot's emoji sits inside its own frame while it has no real sprite
 /// yet (so the composite still reads sensibly). Real art ignores this and uses
@@ -32,9 +37,14 @@ const Map<ItemSlot, Alignment> _fallbackAlign = {
 /// upscale that fits it and the incoming constraints, so nearest-neighbour
 /// pixels stay perfectly square (96 → 192 → 288).
 class CharacterProfile extends ConsumerWidget {
-  const CharacterProfile({super.key, this.size = 288});
+  const CharacterProfile({super.key, this.size = 288, this.pose});
 
   final double size;
+
+  /// What the body does. Null = follow the player's health level (lying down
+  /// at the bottom, striding at the top — see [kHealthPoses]). A body sheet
+  /// without the pose's tag shows its standing frame instead.
+  final CharacterPose? pose;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -48,20 +58,105 @@ class CharacterProfile extends ConsumerWidget {
           budget = math.min(budget, constraints.maxHeight);
         }
         final scale = math.max(1, (budget / kStage).floor()).toDouble();
-        return _Stage(scale: scale);
+        return _Stage(scale: scale, pose: pose);
       },
     );
   }
 }
 
-class _Stage extends ConsumerWidget {
-  const _Stage({required this.scale});
+class _Stage extends ConsumerStatefulWidget {
+  const _Stage({required this.scale, required this.pose});
 
   final double scale;
+  final CharacterPose? pose;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final equipped = ref.watch(playerControllerProvider).equipped;
+  ConsumerState<_Stage> createState() => _StageState();
+}
+
+class _StageState extends ConsumerState<_Stage>
+    with SingleTickerProviderStateMixin {
+  /// The body's frames; every other layer keys its frame off this.
+  SpriteSheet? _body;
+  Ticker? _ticker;
+  int _step = 0;
+
+  @override
+  void dispose() {
+    _ticker?.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(_Stage old) {
+    super.didUpdateWidget(old);
+    if (old.pose != widget.pose) _syncTicker();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncTicker();
+  }
+
+  void _onBody(LoadedSprite? s) {
+    if (!mounted || s?.sheet == _body) return;
+    setState(() => _body = s?.sheet);
+    _syncTicker();
+  }
+
+  CharacterPose get _pose =>
+      widget.pose ??
+      poseForHealth(ref.read(playerControllerProvider).healthLevel);
+
+  /// The run of frames the current pose plays, with each frame's duration
+  /// scaled by the pose's speed.
+  List<int> get _durations {
+    final body = _body;
+    final pose = _pose;
+    final tag = body?.tags[pose.tag];
+    if (body == null || tag == null) return const [];
+    return [
+      for (var i = tag.$1; i <= tag.$2; i++)
+        math.max(16, (body.frames[i].durationMs / pose.speed).round())
+    ];
+  }
+
+  /// Runs the clock only while there is something to animate.
+  void _syncTicker() {
+    final durations = _durations;
+    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final run = durations.length > 1 && !reduceMotion;
+    if (!run) {
+      _ticker?.stop();
+      _step = 0; // every caller rebuilds next, so no setState here
+      return;
+    }
+    _ticker ??= createTicker((elapsed) {
+      final d = _durations;
+      if (d.length < 2) return;
+      final total = d.fold<int>(0, (a, b) => a + b);
+      var t = elapsed.inMilliseconds % total;
+      var i = 0;
+      while (t >= d[i]) {
+        t -= d[i];
+        i++;
+      }
+      if (i != _step) setState(() => _step = i);
+    });
+    if (!_ticker!.isActive) _ticker!.start();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final player = ref.watch(playerControllerProvider);
+    final equipped = player.equipped;
+    if (widget.pose == null) {
+      ref.listen(playerControllerProvider.select((p) => p.healthLevel),
+          (_, __) => _syncTicker());
+    }
+    final pose = widget.pose ?? poseForHealth(player.healthLevel);
+    final scale = widget.scale;
     final size = kStage * scale;
 
     ShopItem? itemFor(ItemSlot slot) {
@@ -73,12 +168,33 @@ class _Stage extends ConsumerWidget {
       return null;
     }
 
+    final base = itemFor(ItemSlot.base);
+    // Clothing that shows skin (gloves, a face) takes the body's tone.
+    final skin = base?.colors[ColorZone.skin];
+    final body = _body;
+    final bodyFrame =
+        body == null ? 0 : (body.frameIn(pose.tag, _step) ?? body.restFrame);
+    // Downed poses show the bare body (and pet) — but only once the body
+    // actually has that pose drawn; until then the outfit stays on.
+    final bareBody =
+        pose.baseOnly && (body?.tags.containsKey(pose.tag) ?? false);
+
+    int frameFor(SpriteSheet sheet) {
+      final tagged = sheet.frameIn(pose.tag, _step);
+      if (tagged != null) return tagged;
+      // Untagged but laid out like the body: follow it frame for frame.
+      if (body != null && sheet.frames.length == body.frames.length) {
+        return bodyFrame;
+      }
+      return sheet.restFrame;
+    }
+
     return SizedBox(
       width: size,
       height: size,
       child: Stack(
         children: [
-          if (equipped[ItemSlot.base] == null)
+          if (base == null)
             Positioned(
               left: kCharOriginX * scale,
               top: kCharOriginY * scale,
@@ -90,8 +206,23 @@ class _Stage extends ConsumerWidget {
               ),
             ),
           for (final slot in kCharacterSlots)
-            if (itemFor(slot) != null)
-              _Layer(item: itemFor(slot)!, scale: scale),
+            if (!bareBody || slot == ItemSlot.base || slot == ItemSlot.pet)
+              if (itemFor(slot) case final item?)
+                _Layer(
+                  item: item,
+                  scale: scale,
+                  recipe: {
+                    if (skin != null) ColorZone.skin: skin,
+                    ...item.colors,
+                  },
+                  frameFor: frameFor,
+                  offsetFor: (sheet) => item.followsHead &&
+                          body != null &&
+                          sheet.frames.length == 1
+                      ? body.headOffset(bodyFrame)
+                      : Offset.zero,
+                  onLoaded: slot == ItemSlot.base ? _onBody : null,
+                ),
         ],
       ),
     );
@@ -99,10 +230,21 @@ class _Stage extends ConsumerWidget {
 }
 
 class _Layer extends StatelessWidget {
-  const _Layer({required this.item, required this.scale});
+  const _Layer({
+    required this.item,
+    required this.scale,
+    required this.recipe,
+    required this.frameFor,
+    required this.offsetFor,
+    this.onLoaded,
+  });
 
   final ShopItem item;
   final double scale;
+  final ColorRecipe recipe;
+  final int Function(SpriteSheet sheet) frameFor;
+  final Offset Function(SpriteSheet sheet) offsetFor;
+  final ValueChanged<LoadedSprite?>? onLoaded;
 
   @override
   Widget build(BuildContext context) {
@@ -117,11 +259,15 @@ class _Layer extends StatelessWidget {
       top: item.stageY * scale,
       width: w,
       height: h,
-      child: Image.asset(
-        item.asset,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.none, // crisp pixel art
-        errorBuilder: (_, __, ___) => Align(
+      child: PixelSprite(
+        item: item,
+        recipe: recipe,
+        frameFor: frameFor,
+        // A one-frame head item rides the head; anything with its own frames
+        // was drawn in place for each one.
+        offsetFor: offsetFor,
+        onLoaded: onLoaded,
+        fallback: Align(
           alignment: item.isTight
               ? Alignment.center
               : (_fallbackAlign[item.slot] ?? Alignment.center),

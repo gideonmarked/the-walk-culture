@@ -163,11 +163,33 @@ a 96px square.
 
 | Piece | File |
 |---|---|
-| Slots, canvas size, `asset` path | `lib/models/shop_item.dart` |
-| Layered character compositor | `lib/features/character/character_profile.dart` |
+| Slots, canvas size, `asset` / `sharedAsset` paths, colour recipe | `lib/models/shop_item.dart` |
+| Key colours and palettes | `lib/core/sprite_palette.dart` (mirrors `art/palettes/walk_key.gpl`) |
+| Aseprite frames, tags, `head` slice | `lib/core/sprite_sheet.dart` |
+| Load, recolour and cache; draw one frame | `lib/widgets/pixel_sprite.dart` |
+| Layered character compositor (idle / walk) | `lib/features/character/character_profile.dart` |
 | Item thumbnail (shop / customiser) | `lib/widgets/sprite_thumb.dart` |
 | Catalog (all item ids + coords) | `lib/data/shop_catalog.dart` |
 
-Both the compositor and the thumbnail use `Image.asset(item.asset, errorBuilder:
-… emoji)`, so missing art degrades gracefully to the emoji — you can replace
-sprites piecemeal, in any order.
+Missing art degrades gracefully to the emoji, so you can replace sprites
+piecemeal, in any order.
+
+## 6. Recolouring and frames
+
+Draw an item once in the **key colours** of `art/palettes/walk_key.gpl`; the app
+swaps each key colour for the same shade of the item's palette at load time.
+
+- **Which file:** the item's own `<id>.png` wins. Otherwise its shared drawing
+  `<spriteId>.png` is used: all ten `gen_top_tee_<colour>` items draw
+  `gen_top_tee.png`, and the five skin tones draw `base.png` (the existing
+  `base_<tone>.png` files keep working until they're removed).
+- **Which colours:** the item's `colors` recipe, e.g. `{ColorZone.primary:
+  'crimson'}`. Palette names and their 3-shade ramps live in
+  `lib/core/sprite_palette.dart`. Worn layers also take the body's skin tone.
+- **Frames:** export with **File → Export Sprite Sheet** and keep the `.json`
+  beside the PNG (Array or Hash, with Tags and Slices). Tags `idle` and `walk`
+  name the poses; Home plays `walk`, the customiser shows `idle`.
+- **Head items** (hair, hats, faces, accessories) drawn as one frame are moved
+  by the body's `head` slice on each frame, so they never need walk frames.
+
+The step-by-step Aseprite guide is the "Recolourable Sprites in Aseprite" doc.

@@ -220,13 +220,13 @@ base sprite's suffix.
 
 | Level | Name | Suffix | Pose |
 |---|---|---|---|
-| 0 | Idle | `_0` | **laying down** — flat on the ground |
-| 1 | Sluggish | `_1` | **crawling** — on hands & knees |
-| 2 | Strolling | `_2` | **hunched** — bent forward, trudging |
+| 0 | Drained | `_0` | **laying down** — flat on the ground |
+| 1 | Worn | `_1` | **crawling** — on hands & knees |
+| 2 | Weary | `_2` | **hunched** — bent forward, trudging |
 | 3 | Steady | `_3` | standing, slight stoop — walking |
-| 4 | Brisk | `_4` | upright, purposeful walk |
-| 5 | Swift | `_5` | tall, striding |
-| 6 | Soaring | `_6` | upright & moving — **animated later** (walk/run cycle) |
+| 4 | Vigorous | `_4` | upright, purposeful walk |
+| 5 | Radiant | `_5` | tall, striding |
+| 6 | Aura | `_6` | upright & moving — **animated later** (walk/run cycle) |
 
 ### The consequence: a pose moves the whole figure
 
