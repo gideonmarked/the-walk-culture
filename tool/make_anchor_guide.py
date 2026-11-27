@@ -25,9 +25,10 @@ SHORTS = {(0x6d, 0x78, 0x7a), (0x35, 0x3d, 0x46), (0x56, 0x5a, 0x63), (0x4d, 0x5
 
 # Each part: name, colour (RGBA), and a test on (x, y, rgb). First match wins.
 # Coordinates measured off the finished body; keep in sync with the guide doc.
+# No neck: the head sits straight on the shoulders, so the skin between the
+# vest straps (y 28-30) is part of the chest.
 PARTS = [
     ('head', (230, 57, 70, 170), lambda x, y, c: 3 <= y <= 27),
-    ('neck', (244, 162, 97, 200), lambda x, y, c: 28 <= y <= 30 and 30 <= x <= 33),
     ('hips', (131, 56, 236, 160), lambda x, y, c: 42 <= y <= 49 and c in SHORTS),
     ('left arm', (82, 183, 136, 170), lambda x, y, c: 29 <= y <= 41 and x <= 25),
     ('right arm', (45, 106, 79, 170), lambda x, y, c: 29 <= y <= 41 and x >= 38),
