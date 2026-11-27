@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/dev_flags.dart';
+import '../../core/health.dart';
 import '../../state/app_providers.dart';
 import '../../state/notifications.dart';
 import '../../state/premium_providers.dart';
@@ -152,6 +153,29 @@ class HomeScreen extends ConsumerWidget {
                     },
                     icon: const Icon(Icons.restart_alt),
                     label: const Text("Reset today's steps (dev)"),
+                  ),
+                  const SizedBox(height: 8),
+                  // Preview each health pose of the character on demand.
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.accessibility_new),
+                      title: const Text('Health level (dev)'),
+                      trailing: DropdownButton<int>(
+                        value: ref.watch(playerControllerProvider
+                            .select((p) => clampHealthLevel(p.healthLevel))),
+                        underline: const SizedBox.shrink(),
+                        onChanged: (v) {
+                          if (v != null) controller.devSetHealthLevel(v);
+                        },
+                        items: [
+                          for (var i = 0; i < kHealthLevels.length; i++)
+                            DropdownMenuItem(
+                              value: i,
+                              child: Text('$i · ${kHealthLevels[i].name}'),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 8),
                 ],

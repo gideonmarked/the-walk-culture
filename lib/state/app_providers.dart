@@ -1057,4 +1057,11 @@ class PlayerController extends StateNotifier<PlayerState> {
     state = state.copyWith(todaySteps: 0);
     await _save();
   }
+
+  /// Dev tool: jump straight to a health level, to preview its character pose
+  /// without waiting days for the daily grading.
+  Future<void> devSetHealthLevel(int level) async {
+    state = state.copyWith(healthLevel: clampHealthLevel(level));
+    await _save();
+  }
 }
