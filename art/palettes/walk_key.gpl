@@ -26,3 +26,7 @@ Columns: 3
 255 255 255	White (fixed: eyes, teeth, shine)
 138 146 156	Metal dark (fixed)
 196 202 209	Metal light (fixed)
+222 229 235	Underwear vest (fixed: base body only)
+ 53  61  70	Underwear shorts dark (fixed: base body only)
+ 86  90  99	Underwear shorts mid (fixed: base body only)
+109 120 122	Underwear shorts light (fixed: base body only)
