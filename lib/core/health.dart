@@ -47,8 +47,7 @@ int applyDailyHealth(int level, int daySteps) {
   return clampHealthLevel(current - 1);
 }
 
-HealthLevel healthLevelInfo(int level) =>
-    kHealthLevels[clampHealthLevel(level)];
+HealthLevel healthLevelInfo(int level) => kHealthLevels[clampHealthLevel(level)];
 
 bool isTopHealth(int level) => clampHealthLevel(level) == _maxLevel;
 bool isBottomHealth(int level) => clampHealthLevel(level) == 0;

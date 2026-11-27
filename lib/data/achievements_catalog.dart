@@ -5,7 +5,8 @@ import 'shop_catalog.dart';
 
 /// Every step sphere (the real-money Celestial tier doesn't count towards
 /// "open them all" — it isn't earnable by walking).
-final int _stepSphereCount = kSphereTiers.where((t) => !t.isRealMoney).length;
+final int _stepSphereCount =
+    kSphereTiers.where((t) => !t.isRealMoney).length;
 
 /// Ids of everything actually purchasable. The Collector trophy counts against
 /// this set rather than `owned.length`, or the 25 reward-only items (sphere
@@ -30,20 +31,16 @@ final List<Achievement> kAchievements = [
       Difficulty.easy, (p) => p.openedSpheres.isNotEmpty),
   Achievement('first_buy', 'First Purchase', '🛒', 'Own an item',
       Difficulty.easy, (p) => p.owned.isNotEmpty),
-  Achievement('dressed', 'Dressed Up', '👕', 'Equip something', Difficulty.easy,
-      (p) => p.equipped.isNotEmpty),
+  Achievement('dressed', 'Dressed Up', '👕', 'Equip something',
+      Difficulty.easy, (p) => p.equipped.isNotEmpty),
   Achievement('first_quest', 'Quester', '📜', 'Claim a daily quest',
       Difficulty.easy, (p) => p.claimedQuests.isNotEmpty),
   Achievement('streak_3', 'Three in a Row', '🔥', 'Reach a 3-day streak',
       Difficulty.easy, (p) => p.streakBest >= 3),
 
   // ---- Medium: a week or two of honest walking ----------------------------
-  Achievement(
-      'day_10k',
-      'Ten Thousand Club',
-      '🏅',
-      'Walk 10,000 steps in a day',
-      Difficulty.medium,
+  Achievement('day_10k', 'Ten Thousand Club', '🏅',
+      'Walk 10,000 steps in a day', Difficulty.medium,
       (p) => p.todaySteps >= kClimbSteps),
   Achievement('fifty_k', 'Pavement Pounder', '🚶', 'Earn 50,000 lifetime steps',
       Difficulty.medium, (p) => p.lifetimeSteps >= 50000),
@@ -51,53 +48,28 @@ final List<Achievement> kAchievements = [
       Difficulty.medium, (p) => p.lifetimeSteps >= 100000),
   Achievement('streak_7', 'Week Warrior', '🗓️', 'Reach a 7-day streak',
       Difficulty.medium, (p) => p.streakBest >= 7),
-  Achievement(
-      'vital',
-      'Picking Up Pace',
-      '💪',
-      'Reach the Vigorous health level',
-      Difficulty.medium,
-      (p) => p.healthLevel >= 4),
+  Achievement('vital', 'Picking Up Pace', '💪', 'Reach the Vigorous health level',
+      Difficulty.medium, (p) => p.healthLevel >= 4),
   Achievement('shopper', 'Shopper', '🛍️', 'Own 3 items', Difficulty.medium,
       (p) => p.owned.length >= 3),
-  Achievement(
-      'decorator',
-      'Interior Designer',
-      '🪴',
-      'Place decor in your house',
-      Difficulty.medium,
+  Achievement('decorator', 'Interior Designer', '🪴',
+      'Place decor in your house', Difficulty.medium,
       (p) => p.placedHome.isNotEmpty),
-  Achievement(
-      'spheres_3',
-      'Triple Crack',
-      '🎁',
-      'Open 3 spheres in a single day',
-      Difficulty.medium,
+  Achievement('spheres_3', 'Triple Crack', '🎁',
+      'Open 3 spheres in a single day', Difficulty.medium,
       (p) => p.openedSpheres.length >= 3),
-  Achievement(
-      'quests_all',
-      'Clean Sweep',
-      '✅',
-      'Claim every daily quest in one day',
-      Difficulty.medium,
+  Achievement('quests_all', 'Clean Sweep', '✅',
+      'Claim every daily quest in one day', Difficulty.medium,
       (p) => p.claimedQuests.length >= 3),
 
   // ---- Hard: sustained commitment ----------------------------------------
   Achievement('day_20k', 'Double Digits', '⚡', 'Walk 20,000 steps in a day',
       Difficulty.hard, (p) => p.todaySteps >= 20000),
-  Achievement(
-      'quarter_million',
-      'Long Hauler',
-      '🥾',
-      'Earn 250,000 lifetime steps',
-      Difficulty.hard,
+  Achievement('quarter_million', 'Long Hauler', '🥾',
+      'Earn 250,000 lifetime steps', Difficulty.hard,
       (p) => p.lifetimeSteps >= 250000),
-  Achievement(
-      'half_million',
-      'Half a Million',
-      '🧭',
-      'Earn 500,000 lifetime steps',
-      Difficulty.hard,
+  Achievement('half_million', 'Half a Million', '🧭',
+      'Earn 500,000 lifetime steps', Difficulty.hard,
       (p) => p.lifetimeSteps >= 500000),
   Achievement('streak_14', 'Fortnight', '📆', 'Reach a 14-day streak',
       Difficulty.hard, (p) => p.streakBest >= 14),
@@ -117,29 +89,18 @@ final List<Achievement> kAchievements = [
       Difficulty.elite, (p) => p.todaySteps >= 30000),
   Achievement('silver', 'Silver Walker', '⚪', 'Earn 1,000,000 lifetime steps',
       Difficulty.elite, (p) => p.lifetimeSteps >= 1000000),
-  Achievement(
-      'five_million',
-      'Legend of the Walk',
-      '🌍',
-      'Earn 5,000,000 lifetime steps',
-      Difficulty.elite,
+  Achievement('five_million', 'Legend of the Walk', '🌍',
+      'Earn 5,000,000 lifetime steps', Difficulty.elite,
       (p) => p.lifetimeSteps >= 5000000),
   Achievement('streak_100', 'Century Streak', '💯', 'Reach a 100-day streak',
       Difficulty.elite, (p) => p.streakBest >= 100),
-  Achievement('radiant', 'Aura', '🌟', 'Reach the top health level, Aura',
-      Difficulty.elite, (p) => isTopHealth(p.healthLevel)),
-  Achievement(
-      'spheres_all',
-      'Sphere Master',
-      '🔮',
-      'Open every step sphere in one day',
-      Difficulty.elite,
+  Achievement('radiant', 'Aura', '🌟',
+      'Reach the top health level, Aura', Difficulty.elite,
+      (p) => isTopHealth(p.healthLevel)),
+  Achievement('spheres_all', 'Sphere Master', '🔮',
+      'Open every step sphere in one day', Difficulty.elite,
       (p) => p.openedSpheres.length >= _stepSphereCount),
-  Achievement(
-      'collector',
-      'Collector',
-      '💎',
-      'Own every shop item',
+  Achievement('collector', 'Collector', '💎', 'Own every shop item',
       Difficulty.elite,
       (p) => p.owned.where(_shopItemIds.contains).length >= _shopItemCount),
 ];

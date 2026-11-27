@@ -54,8 +54,7 @@ void main() {
     Future<ProviderContainer> bootWithYesterday(
         {required int daySteps, required int level}) async {
       kEnableBackgroundServices = false; // no sync to overwrite todaySteps
-      final yesterday =
-          dayKey(DateTime.now().subtract(const Duration(days: 1)));
+      final yesterday = dayKey(DateTime.now().subtract(const Duration(days: 1)));
       SharedPreferences.setMockInitialValues({
         'stepquest_player_v1': jsonEncode({
           'todaySteps': daySteps,
@@ -80,9 +79,7 @@ void main() {
       addTearDown(container.dispose);
 
       // Any state touch rolls the day; simulate walking 0 steps into the new one.
-      await container
-          .read(playerControllerProvider.notifier)
-          .addSimulatedSteps(0);
+      await container.read(playerControllerProvider.notifier).addSimulatedSteps(0);
 
       final state = container.read(playerControllerProvider);
       expect(state.healthLevel, 4); // → Vigorous
@@ -96,9 +93,7 @@ void main() {
       final container = await bootWithYesterday(daySteps: 6000, level: 3);
       addTearDown(container.dispose);
 
-      await container
-          .read(playerControllerProvider.notifier)
-          .addSimulatedSteps(0);
+      await container.read(playerControllerProvider.notifier).addSimulatedSteps(0);
 
       expect(container.read(playerControllerProvider).healthLevel, 3);
     });
@@ -107,12 +102,9 @@ void main() {
       final container = await bootWithYesterday(daySteps: 1200, level: 3);
       addTearDown(container.dispose);
 
-      await container
-          .read(playerControllerProvider.notifier)
-          .addSimulatedSteps(0);
+      await container.read(playerControllerProvider.notifier).addSimulatedSteps(0);
 
-      expect(
-          container.read(playerControllerProvider).healthLevel, 2); // → Weary
+      expect(container.read(playerControllerProvider).healthLevel, 2); // → Weary
     });
 
     test('a brand-new save is not punished for having no yesterday', () async {
@@ -123,9 +115,7 @@ void main() {
       container.read(playerControllerProvider.notifier);
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      await container
-          .read(playerControllerProvider.notifier)
-          .addSimulatedSteps(0);
+      await container.read(playerControllerProvider.notifier).addSimulatedSteps(0);
 
       // Would be Worn/Weary if the empty "yesterday" (0 steps) were graded.
       expect(container.read(playerControllerProvider).healthLevel,
