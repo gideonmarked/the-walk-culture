@@ -104,7 +104,8 @@ class HomeScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Center(
-                    child: CharacterProfile(size: 288)), // 96 stage × 3
+                    child: CharacterProfile(
+                        size: 288, pose: 'walk')), // 96 stage × 3
                 const SizedBox(height: 16),
                 const HealthCard(),
                 const SizedBox(height: 16),

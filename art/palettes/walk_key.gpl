@@ -1,0 +1,28 @@
+GIMP Palette
+Name: Walk Culture key palette
+Columns: 3
+#
+# Draw every recolourable sprite with ONLY these colours.
+# Each ramp runs dark -> mid -> light, so Aseprite's Shading ink steps along it.
+# The app swaps the key ramps (skin, hair, primary, secondary, accent) for the
+# chosen palette. Outline and the fixed colours are never swapped.
+#
+  0   0   1	Outline (fixed)
+189 134 101	Skin dark
+215 159 125	Skin mid
+246 211 159	Skin light
+ 74  44  32	Hair dark
+111  68  48	Hair mid
+154 100  67	Hair light
+122  30  44	Primary dark
+185  48  63	Primary mid
+226  96 107	Primary light
+ 30  60 120	Secondary dark
+ 47  97 183	Secondary mid
+ 94 143 225	Secondary light
+135  87  15	Accent dark
+200 138  29	Accent mid
+241 189  78	Accent light
+255 255 255	White (fixed: eyes, teeth, shine)
+138 146 156	Metal dark (fixed)
+196 202 209	Metal light (fixed)

@@ -1,8 +1,20 @@
 import '../core/currency.dart';
+import '../core/sprite_palette.dart';
 
 /// Character + world slots. Order here is also the render/layer order (back to
 /// front) used by the character profile — see [kSlotZ].
-enum ItemSlot { base, bottom, top, shoes, face, hair, hat, accessory, pet, home }
+enum ItemSlot {
+  base,
+  bottom,
+  top,
+  shoes,
+  face,
+  hair,
+  hat,
+  accessory,
+  pet,
+  home
+}
 
 extension ItemSlotLabel on ItemSlot {
   String get label => switch (this) {
@@ -122,6 +134,14 @@ class ShopItem {
   /// exclusivity is a lie: you could roll a VIP-track item for free.
   final bool passExclusive;
 
+  /// The shared drawing this item recolours, when it has no art of its own:
+  /// every `gen_top_tee_<colour>` uses `gen_top_tee.png`. Null = own art only.
+  final String? spriteId;
+
+  /// Which palette each colour zone uses (see `art/palettes/walk_key.gpl`).
+  /// Empty = drawn colours as-is.
+  final ColorRecipe colors;
+
   const ShopItem({
     required this.id,
     required this.name,
@@ -137,6 +157,8 @@ class ShopItem {
     this.stageSpace,
     this.inShop = true,
     this.passExclusive = false,
+    this.spriteId,
+    this.colors = const {},
   });
 
   /// Sold only in the VIP store: shown on the shelves and buyable only while
@@ -146,6 +168,19 @@ class ShopItem {
 
   /// Path to the sprite. Replace the file to swap in real art.
   String get asset => 'assets/${slot.assetFolder}/$id.png';
+
+  /// Path to the shared drawing ([spriteId]) used when [asset] doesn't exist.
+  String? get sharedAsset =>
+      spriteId == null ? null : 'assets/${slot.assetFolder}/$spriteId.png';
+
+  /// Drawn once and carried by the head on every frame, rather than redrawn
+  /// per frame. Applies only when the sprite has a single frame.
+  bool get followsHead =>
+      !onStage &&
+      (slot == ItemSlot.face ||
+          slot == ItemSlot.hair ||
+          slot == ItemSlot.hat ||
+          slot == ItemSlot.accessory);
 
   /// This sprite is placed in stage space (beside the figure) rather than on
   /// the 64px character sheet (worn on the figure).

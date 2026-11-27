@@ -1,3 +1,4 @@
+import '../core/sprite_palette.dart';
 import '../models/shop_item.dart';
 import 'pass_catalog.dart';
 
@@ -11,11 +12,11 @@ const List<ShopItem> _kSeedCatalog = [
   // ============================ CHARACTER ============================
 
   // --- Body / skin tone (base layer) ---
-  ShopItem(id: 'base_light', name: 'Light Skin', emoji: '🧑🏻', slot: ItemSlot.base, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 100),
-  ShopItem(id: 'base_fair', name: 'Fair Skin', emoji: '🧑🏼', slot: ItemSlot.base, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 100),
-  ShopItem(id: 'base_medium', name: 'Medium Skin', emoji: '🧑🏽', slot: ItemSlot.base, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 100),
-  ShopItem(id: 'base_brown', name: 'Brown Skin', emoji: '🧑🏾', slot: ItemSlot.base, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 100),
-  ShopItem(id: 'base_dark', name: 'Dark Skin', emoji: '🧑🏿', slot: ItemSlot.base, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 100),
+  ShopItem(id: 'base_light', name: 'Light Skin', emoji: '🧑🏻', slot: ItemSlot.base, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 100, spriteId: 'base', colors: {ColorZone.skin: 'light'}),
+  ShopItem(id: 'base_fair', name: 'Fair Skin', emoji: '🧑🏼', slot: ItemSlot.base, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 100, spriteId: 'base', colors: {ColorZone.skin: 'fair'}),
+  ShopItem(id: 'base_medium', name: 'Medium Skin', emoji: '🧑🏽', slot: ItemSlot.base, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 100, spriteId: 'base', colors: {ColorZone.skin: 'medium'}),
+  ShopItem(id: 'base_brown', name: 'Brown Skin', emoji: '🧑🏾', slot: ItemSlot.base, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 100, spriteId: 'base', colors: {ColorZone.skin: 'brown'}),
+  ShopItem(id: 'base_dark', name: 'Dark Skin', emoji: '🧑🏿', slot: ItemSlot.base, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 100, spriteId: 'base', colors: {ColorZone.skin: 'dark'}),
 
   // --- Face ---
   ShopItem(id: 'face_smile', name: 'Smile', emoji: '🙂', slot: ItemSlot.face, rarity: Rarity.common, priceTier: 'Pebbles', priceAmount: 200),
@@ -234,6 +235,9 @@ List<ShopItem> _generatedCatalog() {
         rarity: rarity,
         priceTier: kRarityTier[rarity]!,
         priceAmount: _price(rarity, s),
+        // One drawing per style, recoloured into each variant at load time.
+        spriteId: 'gen_${style.slot.name}_${_slug(style.noun)}',
+        colors: {ColorZone.primary: _slug(variant)},
       ));
     }
   }
