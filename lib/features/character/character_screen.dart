@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/character_pose.dart';
 import '../../data/shop_catalog.dart';
 import '../../models/shop_item.dart';
 import '../../state/app_providers.dart';
@@ -24,7 +25,9 @@ class AvatarTab extends ConsumerWidget {
     return ListView(
       children: [
         const SizedBox(height: 16),
-        const Center(child: CharacterProfile(size: 288)), // 96 stage × 3
+        // Standing still, so the whole outfit shows whatever the health level.
+        const Center(
+            child: CharacterProfile(size: 288, pose: CharacterPose.stand)),
         const SizedBox(height: 12),
         for (final slot in kCharacterSlots)
           if (ownedIn(slot).isNotEmpty)

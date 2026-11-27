@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/character_pose.dart';
 import '../../core/sprite_palette.dart';
 import '../../core/sprite_sheet.dart';
 import '../../data/shop_catalog.dart';
@@ -36,13 +37,14 @@ const Map<ItemSlot, Alignment> _fallbackAlign = {
 /// upscale that fits it and the incoming constraints, so nearest-neighbour
 /// pixels stay perfectly square (96 → 192 → 288).
 class CharacterProfile extends ConsumerWidget {
-  const CharacterProfile({super.key, this.size = 288, this.pose = 'idle'});
+  const CharacterProfile({super.key, this.size = 288, this.pose});
 
   final double size;
 
-  /// The body's Aseprite tag to play: `idle` or `walk`. Falls back to the
-  /// body's rest frame when its sheet has no such tag (or no frames yet).
-  final String pose;
+  /// What the body does. Null = follow the player's health level (lying down
+  /// at the bottom, striding at the top — see [kHealthPoses]). A body sheet
+  /// without the pose's tag shows its standing frame instead.
+  final CharacterPose? pose;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -66,7 +68,7 @@ class _Stage extends ConsumerStatefulWidget {
   const _Stage({required this.scale, required this.pose});
 
   final double scale;
-  final String pose;
+  final CharacterPose? pose;
 
   @override
   ConsumerState<_Stage> createState() => _StageState();
@@ -103,14 +105,20 @@ class _StageState extends ConsumerState<_Stage>
     _syncTicker();
   }
 
-  /// The run of frames the current pose plays, with each frame's duration.
+  CharacterPose get _pose =>
+      widget.pose ??
+      poseForHealth(ref.read(playerControllerProvider).healthLevel);
+
+  /// The run of frames the current pose plays, with each frame's duration
+  /// scaled by the pose's speed.
   List<int> get _durations {
     final body = _body;
-    final tag = body?.tags[widget.pose];
+    final pose = _pose;
+    final tag = body?.tags[pose.tag];
     if (body == null || tag == null) return const [];
     return [
       for (var i = tag.$1; i <= tag.$2; i++)
-        math.max(16, body.frames[i].durationMs)
+        math.max(16, (body.frames[i].durationMs / pose.speed).round())
     ];
   }
 
@@ -141,7 +149,13 @@ class _StageState extends ConsumerState<_Stage>
 
   @override
   Widget build(BuildContext context) {
-    final equipped = ref.watch(playerControllerProvider).equipped;
+    final player = ref.watch(playerControllerProvider);
+    final equipped = player.equipped;
+    if (widget.pose == null) {
+      ref.listen(playerControllerProvider.select((p) => p.healthLevel),
+          (_, __) => _syncTicker());
+    }
+    final pose = widget.pose ?? poseForHealth(player.healthLevel);
     final scale = widget.scale;
     final size = kStage * scale;
 
@@ -159,10 +173,14 @@ class _StageState extends ConsumerState<_Stage>
     final skin = base?.colors[ColorZone.skin];
     final body = _body;
     final bodyFrame =
-        body == null ? 0 : (body.frameIn(widget.pose, _step) ?? body.restFrame);
+        body == null ? 0 : (body.frameIn(pose.tag, _step) ?? body.restFrame);
+    // Downed poses show the bare body (and pet) — but only once the body
+    // actually has that pose drawn; until then the outfit stays on.
+    final bareBody =
+        pose.baseOnly && (body?.tags.containsKey(pose.tag) ?? false);
 
     int frameFor(SpriteSheet sheet) {
-      final tagged = sheet.frameIn(widget.pose, _step);
+      final tagged = sheet.frameIn(pose.tag, _step);
       if (tagged != null) return tagged;
       // Untagged but laid out like the body: follow it frame for frame.
       if (body != null && sheet.frames.length == body.frames.length) {
@@ -188,21 +206,23 @@ class _StageState extends ConsumerState<_Stage>
               ),
             ),
           for (final slot in kCharacterSlots)
-            if (itemFor(slot) case final item?)
-              _Layer(
-                item: item,
-                scale: scale,
-                recipe: {
-                  if (skin != null) ColorZone.skin: skin,
-                  ...item.colors,
-                },
-                frameFor: frameFor,
-                offsetFor: (sheet) =>
-                    item.followsHead && body != null && sheet.frames.length == 1
-                        ? body.headOffset(bodyFrame)
-                        : Offset.zero,
-                onLoaded: slot == ItemSlot.base ? _onBody : null,
-              ),
+            if (!bareBody || slot == ItemSlot.base || slot == ItemSlot.pet)
+              if (itemFor(slot) case final item?)
+                _Layer(
+                  item: item,
+                  scale: scale,
+                  recipe: {
+                    if (skin != null) ColorZone.skin: skin,
+                    ...item.colors,
+                  },
+                  frameFor: frameFor,
+                  offsetFor: (sheet) => item.followsHead &&
+                          body != null &&
+                          sheet.frames.length == 1
+                      ? body.headOffset(bodyFrame)
+                      : Offset.zero,
+                  onLoaded: slot == ItemSlot.base ? _onBody : null,
+                ),
         ],
       ),
     );

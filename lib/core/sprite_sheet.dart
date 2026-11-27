@@ -13,7 +13,8 @@ class SheetFrame {
 /// Aseprite's **Export Sprite Sheet** writes next to the PNG. A PNG with no
 /// JSON is one frame the size of the image.
 ///
-/// - Tags (`idle`, `walk`) name runs of frames, as in the Aseprite timeline.
+/// - Tags (`stand`, `walk`, `lying`…) name runs of frames, as in the
+///   Aseprite timeline. See `lib/core/character_pose.dart` for the poses.
 /// - The `head` slice marks where the head is on each frame. Only the body
 ///   needs it: head items (hair, hats, faces) are drawn once and moved by it.
 class SpriteSheet {
@@ -123,8 +124,9 @@ class SpriteSheet {
     return t.$1 + step % len;
   }
 
-  /// The frame to show at rest: the first `idle` frame, else frame 0.
-  int get restFrame => tags['idle']?.$1 ?? 0;
+  /// The frame to show at rest: the first `stand` frame (`idle` in older
+  /// files), else frame 0.
+  int get restFrame => tags['stand']?.$1 ?? tags['idle']?.$1 ?? 0;
 
   /// How far the head has moved on [frame] compared with the rest frame.
   Offset headOffset(int frame) {
